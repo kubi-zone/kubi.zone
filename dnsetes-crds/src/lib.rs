@@ -9,10 +9,6 @@ use serde::{Deserialize, Serialize};
     kind = "DNSZone",
     namespaced
 )]
-//#[kube(status = "BlockStatus")]
-//#[kube(printcolumn = r#"{"name":"size", "jsonPath": ".spec.size", "type": "string"}"#)]
-//#[kube(printcolumn = r#"{"name":"claim", "jsonPath": ".spec.claim.name", "type": "string"}"#)]
-//#[kube(printcolumn = r#"{"name":"port", "jsonPath": ".status.portNumber", "type": "integer"}"#)]
 #[kube(printcolumn = r#"{"name":"zone", "jsonPath": ".spec.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".spec.serial", "type": "integer"}"#)]
 #[serde(rename_all = "camelCase")]
