@@ -1,0 +1,2 @@
+[workspace]
+members = ["dnsetes-crds"]
