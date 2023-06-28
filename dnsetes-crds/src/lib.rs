@@ -45,6 +45,9 @@ mod defaults {
 #[kube(printcolumn = r#"{"name":"name", "jsonPath": ".spec.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".spec.serial", "type": "integer"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
+#[kube(
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.annotations.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
+)]
 #[serde(rename_all = "camelCase")]
 pub struct DNSZoneSpec {
     pub name: String,

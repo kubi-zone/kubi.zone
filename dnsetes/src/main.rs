@@ -16,10 +16,10 @@ async fn main() {
 
     crds.delete(DNSRecord::crd_name(), &DeleteParams::default())
         .await
-        .unwrap();
+        .ok();
     crds.delete(DNSZone::crd_name(), &DeleteParams::default())
         .await
-        .unwrap();
+        .ok();
 
     crds.create(&PostParams::default(), &DNSRecord::crd())
         .await
@@ -28,5 +28,5 @@ async fn main() {
         .await
         .unwrap();
 
-    fqdn_resolver::resolve_fqdns(client).await;
+    fqdn_resolver::resolve(client).await;
 }
