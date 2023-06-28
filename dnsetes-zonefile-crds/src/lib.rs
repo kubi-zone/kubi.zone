@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 )]
 #[kube(status = "ZoneFileStatus")]
 #[kube(printcolumn = r#"{"name":"zone", "jsonPath": ".spec.zone.name", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".status.serial", "type": "string"}"#)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneFileSpec {
     pub zone: ZoneRef,
@@ -19,5 +20,5 @@ pub struct ZoneFileSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 pub struct ZoneFileStatus {
-    pub last_serial: Option<String>,
+    pub serial: Option<String>,
 }

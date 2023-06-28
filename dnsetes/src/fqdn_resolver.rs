@@ -150,45 +150,47 @@ async fn set_record_parent_ref(
 }
 
 async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), kube::Error> {
-    // Reference to this zone, which other zones and records
-    // will use to refer to it by.
-    let zone_ref = ListParams::default().labels(&format!(
-        "{PARENT_ZONE_LABEL}={}-{}",
-        zone.namespace().as_ref().unwrap(),
-        zone.name_any()
-    ));
+    let new_hash = {
+        // Reference to this zone, which other zones and records
+        // will use to refer to it by.
+        let zone_ref = ListParams::default().labels(&format!(
+            "{PARENT_ZONE_LABEL}={}-{}",
+            zone.namespace().as_ref().unwrap(),
+            zone.name_any()
+        ));
 
-    // Get a hash of the collective child zones and records and use
-    // as the basis for detecting change.
-    let child_zones: BTreeSet<_> = Api::<DNSZone>::all(client.clone())
-        .list(&zone_ref)
-        .await?
-        .into_iter()
-        .map(|zone| zone.spec)
-        .collect();
+        // Get a hash of the collective child zones and records and use
+        // as the basis for detecting change.
+        let child_zones: BTreeSet<_> = Api::<DNSZone>::all(client.clone())
+            .list(&zone_ref)
+            .await?
+            .into_iter()
+            .map(|zone| zone.spec)
+            .collect();
 
-    let child_records: BTreeSet<_> = Api::<DNSRecord>::all(client.clone())
-        .list(&zone_ref)
-        .await?
-        .into_iter()
-        .map(|record| record.spec)
-        .collect();
+        let child_records: BTreeSet<_> = Api::<DNSRecord>::all(client.clone())
+            .list(&zone_ref)
+            .await?
+            .into_iter()
+            .map(|record| record.spec)
+            .collect();
 
-    let mut hasher = DefaultHasher::new();
-    (child_zones, child_records).hash(&mut hasher);
+        let mut hasher = DefaultHasher::new();
+        (child_zones, child_records).hash(&mut hasher);
 
-    let hash = hasher.finish().to_string();
+        hasher.finish().to_string()
+    };
 
     let last_hash = zone.status.as_ref().and_then(|status| status.hash.as_ref());
 
-    if last_hash != Some(&hash) {
+    if last_hash != Some(&new_hash) {
         info!(
-            "zone {}'s hash (before: {last_hash:?}, now: {hash}) changed, updating serial",
+            "zone {}'s hash (before: {last_hash:?}, now: {new_hash}) changed, updating serial",
             zone.name_any()
         );
+
         // Compute a serial based on the current datetime in UTC.
         let now = time::OffsetDateTime::now_utc();
-
         #[rustfmt::skip]
         let now_serial
             = now.year()  as u32 * 1000000
@@ -203,7 +205,7 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
             zone.spec.serial
         );
 
-        // We apply the serial patch first, because in that case if the hash status
+        // We apply the serial patch first, because in that case the hash status
         // application fails, the failure mode is that serial gets bumped again, and
         // then the hash update hopefully works the second time around.
         //
@@ -227,7 +229,7 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
                 &PatchParams::apply(CONTROLLER_NAME),
                 &Patch::Merge(json!({
                     "status": {
-                        "hash": hash.to_string(),
+                        "hash": new_hash,
                     },
                 })),
             )
