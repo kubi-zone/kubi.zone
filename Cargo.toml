@@ -4,4 +4,5 @@ members = [
     "dnsetes-crds",
     "dnsetes",
     "dnsetes-zonefile-crds",
+    "dnsetes-zonefile",
 ]

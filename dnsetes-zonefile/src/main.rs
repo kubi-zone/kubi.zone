@@ -1,4 +1,4 @@
-use dnsetes_crds::{DNSRecord, DNSZone};
+use dnsetes_zonefile_crds::ZoneFile;
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use kube::{
     api::{DeleteParams, PostParams},
@@ -14,17 +14,11 @@ async fn main() {
 
     let crds: Api<CustomResourceDefinition> = Api::all(client.clone());
 
-    crds.delete(DNSRecord::crd_name(), &DeleteParams::default())
-        .await
-        .ok();
-    crds.delete(DNSZone::crd_name(), &DeleteParams::default())
+    crds.delete(ZoneFile::crd_name(), &DeleteParams::default())
         .await
         .ok();
 
-    crds.create(&PostParams::default(), &DNSRecord::crd())
-        .await
-        .unwrap();
-    crds.create(&PostParams::default(), &DNSZone::crd())
+    crds.create(&PostParams::default(), &ZoneFile::crd())
         .await
         .unwrap();
 

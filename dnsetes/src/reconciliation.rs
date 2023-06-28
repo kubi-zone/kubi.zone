@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::select;
 
-use dnsetes_crds::{DNSRecord, DNSZone};
+use dnsetes_crds::{DNSRecord, DNSZone, PARENT_ZONE_LABEL};
 use kube::{
     api::{ListParams, Patch, PatchParams},
     runtime::{controller::Action, reflector::ObjectRef, watcher, Controller},
@@ -20,8 +20,7 @@ struct Data {
     client: Client,
 }
 
-const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zone-resolver";
-const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
+pub const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zone-resolver";
 
 async fn set_zone_fqdn(client: Client, zone: &DNSZone, fqdn: &str) -> Result<(), kube::Error> {
     if !zone
@@ -154,9 +153,8 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
         // Reference to this zone, which other zones and records
         // will use to refer to it by.
         let zone_ref = ListParams::default().labels(&format!(
-            "{PARENT_ZONE_LABEL}={}-{}",
-            zone.namespace().as_ref().unwrap(),
-            zone.name_any()
+            "{PARENT_ZONE_LABEL}={}",
+            zone.zone_ref().to_string()
         ));
 
         // Get a hash of the collective child zones and records and use
@@ -276,13 +274,12 @@ async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, k
 
         set_zone_fqdn(ctx.client.clone(), &zone, &fqdn).await?;
 
-        let parent_ref = format!(
-            "{}-{}",
-            parent_zone.namespace().as_ref().unwrap(),
-            parent_zone.name_any()
-        );
-
-        set_zone_parent_ref(ctx.client.clone(), &zone, parent_ref).await?;
+        set_zone_parent_ref(
+            ctx.client.clone(),
+            &zone,
+            parent_zone.zone_ref().to_string(),
+        )
+        .await?;
     };
 
     rotate_zone_serial(zone, ctx.client.clone()).await?;
@@ -331,14 +328,12 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
             return Ok(Action::requeue(Duration::from_secs(30)))
         };
 
-        // Populate the `dnsetes.pius.dev/parent-zone` annotation
-        let parent_ref = format!(
-            "{}-{}",
-            longest_parent_zone.namespace().as_ref().unwrap(),
-            longest_parent_zone.name_any()
-        );
-
-        set_record_parent_ref(ctx.client.clone(), &record, parent_ref).await?;
+        set_record_parent_ref(
+            ctx.client.clone(),
+            &record,
+            longest_parent_zone.zone_ref().to_string(),
+        )
+        .await?;
     } else {
         let Some(zone_ref) = record.spec.zone_ref.as_ref() else {
             warn!("record {} does not have a fully qualified domain name, nor does it reference a zone.", record.name_any());
@@ -371,15 +366,12 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
         let fqdn = format!("{}.{}", record.spec.name, parent_fqdn);
 
         set_record_fqdn(ctx.client.clone(), &record, &fqdn).await?;
-
-        // Populate the `dnsetes.pius.dev/parent-zone` annotation
-        let parent_ref = format!(
-            "{}-{}",
-            parent_zone.namespace().as_ref().unwrap(),
-            parent_zone.name_any()
-        );
-
-        set_record_parent_ref(ctx.client.clone(), &record, parent_ref).await?;
+        set_record_parent_ref(
+            ctx.client.clone(),
+            &record,
+            parent_zone.zone_ref().to_string(),
+        )
+        .await?;
     };
 
     Ok(Action::requeue(Duration::from_secs(30)))
@@ -401,7 +393,7 @@ fn record_error_policy(record: Arc<DNSRecord>, error: &kube::Error, _ctx: Arc<Da
     Action::requeue(Duration::from_secs(60))
 }
 
-pub async fn resolve_fqdns(client: Client) {
+pub async fn reconcile(client: Client) {
     let zones = Api::<DNSZone>::all(client.clone());
 
     let zone_controller = Controller::new(zones.clone(), watcher::Config::default())
@@ -440,7 +432,7 @@ pub async fn resolve_fqdns(client: Client) {
             |zone| {
                 let parent = zone.labels().get("dnsetes.pius.dev/parent-zone")?;
 
-                let (namespace, name) = parent.split_once("/")?;
+                let (name, namespace) = parent.split_once(".")?;
 
                 Some(ObjectRef::new(name).within(namespace))
             },

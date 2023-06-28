@@ -1,4 +1,6 @@
-use kube::CustomResource;
+use std::fmt::Display;
+
+use kube::{CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +35,8 @@ mod defaults {
         CLASS.to_string()
     }
 }
+
+pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
 
 #[derive(
     CustomResource,
@@ -76,6 +80,15 @@ pub struct DNSZoneSpec {
     pub expire: u32,
     #[serde(default = "defaults::negative_response_cache")]
     pub negative_response_cache: u32,
+}
+
+impl DNSZone {
+    pub fn zone_ref(&self) -> ZoneRef {
+        ZoneRef {
+            name: self.name_any(),
+            namespace: self.namespace(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -136,6 +149,16 @@ pub struct DNSRecordStatus {
 pub struct ZoneRef {
     pub name: String,
     pub namespace: Option<String>,
+}
+
+impl Display for ZoneRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(namespace) = &self.namespace {
+            write!(f, "{namespace}.{}", self.name)
+        } else {
+            f.write_str(&self.name)
+        }
+    }
 }
 
 #[cfg(test)]

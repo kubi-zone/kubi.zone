@@ -3,6 +3,8 @@ use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub const TARGET_ZONEFILE_LABEL: &str = "dnsetes.pius.dev/zonefile";
+
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema, Hash)]
 #[kube(
     group = "dnsetes.pius.dev",
@@ -20,5 +22,5 @@ pub struct ZoneFileSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 pub struct ZoneFileStatus {
-    pub serial: Option<String>,
+    pub serial: Option<u32>,
 }
