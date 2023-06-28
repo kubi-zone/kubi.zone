@@ -1,2 +1,7 @@
 [workspace]
-members = ["dnsetes-crds"]
+resolver = "2"
+members = [
+    "dnsetes-crds",
+    "dnsetes",
+    "dnsetes-zonefile-crds",
+]

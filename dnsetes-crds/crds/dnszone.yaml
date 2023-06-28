@@ -1,0 +1,90 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dnszones.dnsetes.pius.dev
+spec:
+  group: dnsetes.pius.dev
+  names:
+    categories: []
+    kind: DNSZone
+    plural: dnszones
+    shortNames: []
+    singular: dnszone
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.name
+      name: zone
+      type: string
+    - jsonPath: .spec.serial
+      name: serial
+      type: integer
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for DNSZoneSpec via `CustomResource`
+        properties:
+          spec:
+            properties:
+              expire:
+                default: 3600
+                format: uint32
+                minimum: 0.0
+                type: integer
+              name:
+                type: string
+              negativeResponseCache:
+                default: 3600
+                format: uint32
+                minimum: 0.0
+                type: integer
+              refresh:
+                default: 7600
+                format: uint32
+                minimum: 0.0
+                type: integer
+              retry:
+                default: 3600
+                format: uint32
+                minimum: 0.0
+                type: integer
+              serial:
+                default: 1
+                format: uint32
+                minimum: 0.0
+                type: integer
+              ttl:
+                default: 3600
+                format: uint32
+                minimum: 0.0
+                type: integer
+              zoneRef:
+                nullable: true
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    nullable: true
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - name
+            type: object
+          status:
+            nullable: true
+            properties:
+              fqdn:
+                nullable: true
+                type: string
+            type: object
+        required:
+        - spec
+        title: DNSZone
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
