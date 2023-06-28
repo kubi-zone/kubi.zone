@@ -32,12 +32,19 @@ metadata:
   name: www-ref-example-org
   namespace: dnsetes
 spec:
-  name: www
-  zoneRef:
-    name: ref-example-org
-    namespace: dnsetes
+  name: www.ref.example.org.
   type: A
   rdata: "192.168.0.1"
+---
+apiVersion: dnsetes.pius.dev/v1alpha1
+kind: DNSRecord
+metadata:
+  name: www-example-org
+  namespace: dnsetes
+spec:
+  name: www.example.org.
+  type: A
+  rdata: "192.168.0.2"
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
 kind: DNSRecord
@@ -50,4 +57,5 @@ spec:
     name: ref-example-org
     namespace: dnsetes
   type: A
-  rdata: "192.168.0.2"
+  rdata: "192.168.0.3"
+---

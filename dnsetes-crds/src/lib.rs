@@ -34,7 +34,19 @@ mod defaults {
     }
 }
 
-#[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
+#[derive(
+    CustomResource,
+    Deserialize,
+    Serialize,
+    Clone,
+    Debug,
+    JsonSchema,
+    Hash,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+)]
 #[kube(
     group = "dnsetes.pius.dev",
     version = "v1alpha1",
@@ -67,11 +79,25 @@ pub struct DNSZoneSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct DNSZoneStatus {
     pub fqdn: Option<String>,
+    pub hash: Option<String>,
 }
 
-#[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
+#[derive(
+    CustomResource,
+    Deserialize,
+    Serialize,
+    Clone,
+    Debug,
+    JsonSchema,
+    Hash,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+)]
 #[kube(
     group = "dnsetes.pius.dev",
     version = "v1alpha1",
@@ -84,7 +110,9 @@ pub struct DNSZoneStatus {
 #[kube(printcolumn = r#"{"name":"type", "jsonPath": ".spec.type", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"data", "jsonPath": ".spec.rdata", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
-#[kube(printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.annotations.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#)]
+#[kube(
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.annotations.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
+)]
 #[serde(rename_all = "camelCase")]
 pub struct DNSRecordSpec {
     pub name: String,
@@ -102,7 +130,9 @@ pub struct DNSRecordStatus {
     pub fqdn: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(
+    Serialize, Deserialize, Clone, Debug, JsonSchema, Hash, PartialEq, Eq, PartialOrd, Ord,
+)]
 pub struct ZoneRef {
     pub name: String,
     pub namespace: Option<String>,

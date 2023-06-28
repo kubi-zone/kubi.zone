@@ -14,7 +14,3 @@ k8s-openapi = { version = "0.18.0", features = ["v1_25"] }
 
 [dev-dependencies]
 serde_yaml = "0.9.21"
-tracing = "0.1.37"
-tracing-subscriber = "0.3.17"
-tokio = { version = "1.28.2", features = ["macros", "rt"] }
-kube = { version = "0.83.0", default-features = false, features = ["derive", "rustls-tls", "client"] }
