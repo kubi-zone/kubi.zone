@@ -1,6 +1,7 @@
 use futures::StreamExt;
 use k8s_openapi::serde_json::json;
 use std::{sync::Arc, time::Duration};
+use tokio::select;
 
 use dnsetes_crds::{DNSRecord, DNSZone};
 use kube::{
@@ -36,6 +37,8 @@ async fn set_zone_fqdn(client: Client, zone: &DNSZone, fqdn: &str) -> Result<(),
                 })),
             )
             .await?;
+    } else {
+        debug!("not updating fqdn for zone {} {fqdn}", zone.name_any())
     }
     Ok(())
 }
@@ -44,24 +47,34 @@ async fn set_zone_parent_ref(
     zone: &Arc<DNSZone>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
-    info!(
-        "updating zone {}'s {PARENT_ZONE_ANNOTATION} to {parent_ref}",
-        zone.name_any()
-    );
-    Api::<DNSZone>::namespaced(client, &zone.metadata.namespace.as_ref().unwrap())
-        .patch_metadata(
-            &zone.name_any(),
-            &PatchParams::apply(CONTROLLER_NAME),
-            &Patch::Merge(json!({
-                "metadata": {
-                    "annotations": {
-                        PARENT_ZONE_ANNOTATION: parent_ref
-                    },
-                }
-            })),
+    if !zone
+        .annotations()
+        .get(PARENT_ZONE_ANNOTATION)
+        .is_some_and(|current_parent| current_parent == &parent_ref)
+    {
+        info!(
+            "updating zone {}'s {PARENT_ZONE_ANNOTATION} to {parent_ref}",
+            zone.name_any()
+        );
+        Api::<DNSZone>::namespaced(client, &zone.metadata.namespace.as_ref().unwrap())
+            .patch_metadata(
+                &zone.name_any(),
+                &PatchParams::apply(CONTROLLER_NAME),
+                &Patch::Merge(json!({
+                    "metadata": {
+                        "annotations": {
+                            PARENT_ZONE_ANNOTATION: parent_ref
+                        },
+                    }
+                })),
+            )
+            .await?;
+    } else {
+        debug!(
+            "not updating zone {}'s {PARENT_ZONE_ANNOTATION} since it is already {parent_ref}",
+            zone.name_any()
         )
-        .await?;
-
+    }
     Ok(())
 }
 
@@ -88,6 +101,8 @@ async fn set_record_fqdn(
                 })),
             )
             .await?;
+    } else {
+        debug!("not updating fqdn for record {} {fqdn}", record.name_any())
     }
     Ok(())
 }
@@ -97,24 +112,34 @@ async fn set_record_parent_ref(
     record: &Arc<DNSRecord>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
-    info!(
-        "updating record {}'s {PARENT_ZONE_ANNOTATION} to {parent_ref}",
-        record.name_any()
-    );
-    Api::<DNSRecord>::namespaced(client, &record.metadata.namespace.as_ref().unwrap())
-        .patch_metadata(
-            &record.name_any(),
-            &PatchParams::apply(CONTROLLER_NAME),
-            &Patch::Merge(json!({
-                "metadata": {
-                    "annotations": {
-                        PARENT_ZONE_ANNOTATION: parent_ref
-                    },
-                }
-            })),
+    if !record
+        .annotations()
+        .get(PARENT_ZONE_ANNOTATION)
+        .is_some_and(|current_parent| current_parent == &parent_ref)
+    {
+        info!(
+            "updating record {}'s {PARENT_ZONE_ANNOTATION} to {parent_ref}",
+            record.name_any()
+        );
+        Api::<DNSRecord>::namespaced(client, &record.metadata.namespace.as_ref().unwrap())
+            .patch_metadata(
+                &record.name_any(),
+                &PatchParams::apply(CONTROLLER_NAME),
+                &Patch::Merge(json!({
+                    "metadata": {
+                        "annotations": {
+                            PARENT_ZONE_ANNOTATION: parent_ref
+                        },
+                    }
+                })),
+            )
+            .await?;
+    } else {
+        debug!(
+            "not updating record {}'s {PARENT_ZONE_ANNOTATION} since it is already {parent_ref}",
+            record.name_any()
         )
-        .await?;
-
+    }
     Ok(())
 }
 
@@ -172,14 +197,51 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
     if record.spec.name.ends_with(".") {
         set_record_fqdn(ctx.client.clone(), &record, &record.spec.name).await?;
 
-        // Try to deduce the parent zone using just the name.
-        let all_zones: Vec<DNSZone> = Api::<DNSZone>::all(ctx.client.clone())
+        // Retrieve all zones with a defined fqdn.
+        let mut all_zones: Vec<_> = Api::<DNSZone>::all(ctx.client.clone())
             .list(&ListParams::default())
             .await?
-            .into_iter()            
+            .into_iter()
+            .filter_map(|zone| {
+                if let Some(fqdn) = zone
+                    .status
+                    .as_ref()
+                    .and_then(|status| status.fqdn.as_ref().map(|fqdn| fqdn.clone()))
+                {
+                    Some((fqdn, zone))
+                } else {
+                    None
+                }
+            })
             .collect();
 
+        // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
+        all_zones.sort_by(|a, b| {
+            b.0.chars()
+                .rev()
+                .collect::<Vec<_>>()
+                .cmp(&a.0.chars().rev().collect())
+        });
 
+        let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(fqdn, zone)| {
+             if record.spec.name.starts_with(&fqdn) {
+                Some(zone)
+            } else {
+                None
+            }
+        }) else {
+            warn!("record {} ({}) does not fit into any found dnszone", record.name_any(), &record.spec.name);
+            return Ok(Action::requeue(Duration::from_secs(30)))
+        };
+
+        // Populate the `dnsetes.pius.dev/parent-zone` annotation
+        let parent_ref = format!(
+            "{}/{}",
+            longest_parent_zone.namespace().as_ref().unwrap(),
+            longest_parent_zone.name_any()
+        );
+
+        set_record_parent_ref(ctx.client.clone(), &record, parent_ref).await?;
     } else {
         let Some(zone_ref) = record.spec.zone_ref.as_ref() else {
             warn!("record {} does not have a fully qualified domain name, nor does it reference a zone.", record.name_any());
@@ -226,7 +288,11 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
     Ok(Action::requeue(Duration::from_secs(30)))
 }
 
-fn error_policy(_object: Arc<DNSZone>, _error: &kube::Error, _ctx: Arc<Data>) -> Action {
+fn zone_error_policy(_object: Arc<DNSZone>, _error: &kube::Error, _ctx: Arc<Data>) -> Action {
+    Action::requeue(Duration::from_secs(60))
+}
+
+fn record_error_policy(_object: Arc<DNSRecord>, _error: &kube::Error, _ctx: Arc<Data>) -> Action {
     Action::requeue(Duration::from_secs(60))
 }
 
@@ -248,7 +314,7 @@ pub async fn resolve_fqdns(client: Client) {
         .shutdown_on_signal()
         .run(
             reconcile_zones,
-            error_policy,
+            zone_error_policy,
             Arc::new(Data {
                 client: client.clone(),
             }),
@@ -277,7 +343,7 @@ pub async fn resolve_fqdns(client: Client) {
         .shutdown_on_signal()
         .run(
             reconcile_records,
-            error_policy,
+            record_error_policy,
             Arc::new(Data {
                 client: client.clone(),
             }),
@@ -289,5 +355,8 @@ pub async fn resolve_fqdns(client: Client) {
             }
         });
 
-    zone_controller.await;
+    select! {
+        _ = zone_controller => (),
+        _ = record_controller => ()
+    }
 }

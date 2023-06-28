@@ -1,0 +1,53 @@
+---
+apiVersion: dnsetes.pius.dev/v1alpha1
+kind: DNSZone
+metadata:
+  name: example-org
+  namespace: dnsetes
+spec:
+  name: example.org.
+---
+apiVersion: dnsetes.pius.dev/v1alpha1
+kind: DNSZone
+metadata:
+  name: fqdn-example-org
+  namespace: dnsetes
+spec:
+  name: fqdn.example.org.
+---
+apiVersion: dnsetes.pius.dev/v1alpha1
+kind: DNSZone
+metadata:
+  name: ref-example-org
+  namespace: dnsetes
+spec:
+  name: ref
+  zoneRef:
+    name: example-org
+    namespace: dnsetes
+---
+apiVersion: dnsetes.pius.dev/v1alpha1
+kind: DNSRecord
+metadata:
+  name: www-ref-example-org
+  namespace: dnsetes
+spec:
+  name: www
+  zoneRef:
+    name: ref-example-org
+    namespace: dnsetes
+  type: A
+  rdata: "192.168.0.1"
+---
+apiVersion: dnsetes.pius.dev/v1alpha1
+kind: DNSRecord
+metadata:
+  name: www-sub-lol-ref-example-org
+  namespace: dnsetes
+spec:
+  name: www.sub.lol
+  zoneRef:
+    name: ref-example-org
+    namespace: dnsetes
+  type: A
+  rdata: "192.168.0.2"

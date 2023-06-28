@@ -28,5 +28,5 @@ async fn main() {
         .await
         .unwrap();
 
-    fqdn_resolver::resolve(client).await;
+    fqdn_resolver::resolve_fqdns(client).await;
 }
