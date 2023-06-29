@@ -8,10 +8,10 @@ use std::{
 };
 use tokio::select;
 
-use dnsetes_crds::{DNSRecord, DNSZone, PARENT_ZONE_LABEL};
+use dnsetes_crds::{Record, Zone, PARENT_ZONE_LABEL};
 use kube::{
     api::{ListParams, Patch, PatchParams},
-    runtime::{controller::Action, reflector::ObjectRef, watcher, Controller},
+    runtime::{controller::Action, watcher, Controller},
     Api, Client, ResourceExt,
 };
 use tracing::log::*;
@@ -22,7 +22,7 @@ struct Data {
 
 pub const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zone-resolver";
 
-async fn set_zone_fqdn(client: Client, zone: &DNSZone, fqdn: &str) -> Result<(), kube::Error> {
+async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), kube::Error> {
     if !zone
         .status
         .as_ref()
@@ -30,7 +30,7 @@ async fn set_zone_fqdn(client: Client, zone: &DNSZone, fqdn: &str) -> Result<(),
         .is_some_and(|current_fqdn| current_fqdn == fqdn)
     {
         info!("updating fqdn for zone {} to {}", zone.name_any(), fqdn);
-        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
+        Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_status(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -48,7 +48,7 @@ async fn set_zone_fqdn(client: Client, zone: &DNSZone, fqdn: &str) -> Result<(),
 }
 async fn set_zone_parent_ref(
     client: Client,
-    zone: &Arc<DNSZone>,
+    zone: &Arc<Zone>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
     if !zone
@@ -61,7 +61,7 @@ async fn set_zone_parent_ref(
             zone.name_any()
         );
 
-        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
+        Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_metadata(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -83,11 +83,7 @@ async fn set_zone_parent_ref(
     Ok(())
 }
 
-async fn set_record_fqdn(
-    client: Client,
-    record: &DNSRecord,
-    fqdn: &str,
-) -> Result<(), kube::Error> {
+async fn set_record_fqdn(client: Client, record: &Record, fqdn: &str) -> Result<(), kube::Error> {
     if !record
         .status
         .as_ref()
@@ -95,7 +91,7 @@ async fn set_record_fqdn(
         .is_some_and(|current_fqdn| current_fqdn == fqdn)
     {
         info!("updating fqdn for record {} to {}", record.name_any(), fqdn);
-        Api::<DNSRecord>::namespaced(client, record.namespace().as_ref().unwrap())
+        Api::<Record>::namespaced(client, record.namespace().as_ref().unwrap())
             .patch_status(
                 &record.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -114,7 +110,7 @@ async fn set_record_fqdn(
 
 async fn set_record_parent_ref(
     client: Client,
-    record: &Arc<DNSRecord>,
+    record: &Arc<Record>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
     if !record
@@ -126,7 +122,7 @@ async fn set_record_parent_ref(
             "updating record {}'s {PARENT_ZONE_LABEL} to {parent_ref}",
             record.name_any()
         );
-        Api::<DNSRecord>::namespaced(client, record.namespace().as_ref().unwrap())
+        Api::<Record>::namespaced(client, record.namespace().as_ref().unwrap())
             .patch_metadata(
                 &record.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -148,7 +144,7 @@ async fn set_record_parent_ref(
     Ok(())
 }
 
-async fn update_zone_hash(zone: Arc<DNSZone>, client: Client) -> Result<(), kube::Error> {
+async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::Error> {
     let new_hash = {
         // Reference to this zone, which other zones and records
         // will use to refer to it by.
@@ -159,14 +155,14 @@ async fn update_zone_hash(zone: Arc<DNSZone>, client: Client) -> Result<(), kube
 
         // Get a hash of the collective child zones and records and use
         // as the basis for detecting change.
-        let child_zones: BTreeSet<_> = Api::<DNSZone>::all(client.clone())
+        let child_zones: BTreeSet<_> = Api::<Zone>::all(client.clone())
             .list(&zone_ref)
             .await?
             .into_iter()
             .map(|zone| zone.spec)
             .collect();
 
-        let child_records: BTreeSet<_> = Api::<DNSRecord>::all(client.clone())
+        let child_records: BTreeSet<_> = Api::<Record>::all(client.clone())
             .list(&zone_ref)
             .await?
             .into_iter()
@@ -187,7 +183,7 @@ async fn update_zone_hash(zone: Arc<DNSZone>, client: Client) -> Result<(), kube
             zone.name_any()
         );
 
-        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
+        Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_status(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -203,7 +199,7 @@ async fn update_zone_hash(zone: Arc<DNSZone>, client: Client) -> Result<(), kube
     Ok(())
 }
 
-async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
+async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the zone
     if zone.spec.name.ends_with('.') {
         set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.name).await?;
@@ -212,7 +208,7 @@ async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, k
             warn!("zone {} does not have a fully qualified domain name, nor does it reference a zone.", zone.name_any());
             return Ok(Action::requeue(Duration::from_secs(300)))
         };
-        let parent_zone = Api::<DNSZone>::namespaced(
+        let parent_zone = Api::<Zone>::namespaced(
             ctx.client.clone(),
             &zone_ref
                 .namespace
@@ -252,13 +248,13 @@ async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, k
     Ok(Action::requeue(Duration::from_secs(30)))
 }
 
-async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
+async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the record
     if record.spec.name.ends_with('.') {
         set_record_fqdn(ctx.client.clone(), &record, &record.spec.name).await?;
 
         // Retrieve all zones with a defined fqdn.
-        let mut all_zones: Vec<_> = Api::<DNSZone>::all(ctx.client.clone())
+        let mut all_zones: Vec<_> = Api::<Zone>::all(ctx.client.clone())
             .list(&ListParams::default())
             .await?
             .into_iter()
@@ -273,7 +269,7 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
         // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
         //
         // Reversing the fqdns sorts by domain suffix.
-        // 
+        //
         // Reversing the order puts the longer domains first, letting us use `Iterator::find`
         // to get the longest matching suffix.
         all_zones.sort_by(|a, b| {
@@ -291,7 +287,7 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
                 None
             }
         }) else {
-            warn!("record {} ({}) does not fit into any found dnszone", record.name_any(), &record.spec.name);
+            warn!("record {} ({}) does not fit into any found Zone", record.name_any(), &record.spec.name);
             return Ok(Action::requeue(Duration::from_secs(30)))
         };
 
@@ -306,7 +302,7 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
             warn!("record {} does not have a fully qualified domain name, nor does it reference a zone.", record.name_any());
             return Ok(Action::requeue(Duration::from_secs(300)))
         };
-        let parent_zone = Api::<DNSZone>::namespaced(
+        let parent_zone = Api::<Zone>::namespaced(
             ctx.client.clone(),
             &zone_ref
                 .namespace
@@ -344,7 +340,7 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
     Ok(Action::requeue(Duration::from_secs(30)))
 }
 
-fn zone_error_policy(zone: Arc<DNSZone>, error: &kube::Error, _ctx: Arc<Data>) -> Action {
+fn zone_error_policy(zone: Arc<Zone>, error: &kube::Error, _ctx: Arc<Data>) -> Action {
     error!(
         "zone {} reconciliation encountered error: {error}",
         zone.name_any()
@@ -352,7 +348,7 @@ fn zone_error_policy(zone: Arc<DNSZone>, error: &kube::Error, _ctx: Arc<Data>) -
     Action::requeue(Duration::from_secs(60))
 }
 
-fn record_error_policy(record: Arc<DNSRecord>, error: &kube::Error, _ctx: Arc<Data>) -> Action {
+fn record_error_policy(record: Arc<Record>, error: &kube::Error, _ctx: Arc<Data>) -> Action {
     error!(
         "record {} reconciliation encountered error: {error}",
         record.name_any()
@@ -361,19 +357,13 @@ fn record_error_policy(record: Arc<DNSRecord>, error: &kube::Error, _ctx: Arc<Da
 }
 
 pub async fn reconcile(client: Client) {
-    let zones = Api::<DNSZone>::all(client.clone());
+    let zones = Api::<Zone>::all(client.clone());
 
     let zone_controller = Controller::new(zones.clone(), watcher::Config::default())
         .watches(
-            Api::<DNSZone>::all(client.clone()),
+            Api::<Zone>::all(client.clone()),
             watcher::Config::default(),
-            |zone| {
-                let parent = zone.labels().get("dnsetes.pius.dev/parent-zone")?;
-
-                let (namespace, name) = parent.split_once('.')?;
-
-                Some(ObjectRef::new(name).within(namespace))
-            },
+            dnsetes_crds::watch_reference(PARENT_ZONE_LABEL),
         )
         .shutdown_on_signal()
         .run(
@@ -390,20 +380,9 @@ pub async fn reconcile(client: Client) {
             }
         });
 
-    let records = Api::<DNSRecord>::all(client.clone());
+    let records = Api::<Record>::all(client.clone());
 
     let record_controller = Controller::new(records, watcher::Config::default())
-        .watches(
-            Api::<DNSZone>::all(client.clone()),
-            watcher::Config::default(),
-            |zone| {
-                let parent = zone.labels().get("dnsetes.pius.dev/parent-zone")?;
-
-                let (name, namespace) = parent.split_once('.')?;
-
-                Some(ObjectRef::new(name).within(namespace))
-            },
-        )
         .shutdown_on_signal()
         .run(
             reconcile_records,

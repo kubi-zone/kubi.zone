@@ -1,4 +1,4 @@
-use dnsetes_crds::{DNSRecord, DNSRecordSpec, DNSZone};
+use dnsetes_crds::{Record, RecordSpec, Zone};
 use dnsetes_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
 use futures::StreamExt;
 
@@ -6,7 +6,7 @@ use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
 use kube::{
     api::{ListParams, Patch, PatchParams},
     core::ObjectMeta,
-    runtime::{controller::Action, reflector::ObjectRef, watcher, Controller},
+    runtime::{controller::Action, watcher, Controller},
     Api, Client, Resource, ResourceExt,
 };
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
@@ -24,15 +24,18 @@ async fn build_zonefile(
     zonefile: &ZoneFile,
     origin: &str,
 ) -> Result<String, kube::Error> {
-    let zone_ref = ListParams::default().labels(&format!(
+
+    let label = format!(
         "{PARENT_ZONE_LABEL}={}",
-        zonefile.spec.zone_ref.to_string()
-    ));
+        zonefile.zone_ref().to_string()
+    );
+    debug!("generating zone by finding records matching {label}");
+    let zone_ref = ListParams::default().labels(&label);
 
     // Get a hash of the collective child zones and records and use
     // as the basis for detecting change.
     /*
-       let child_zones: Vec<_> = Api::<DNSZone>::all(client.clone())
+       let child_zones: Vec<_> = Api::<Zone>::all(client.clone())
            .list(&zone_ref)
            .await?
            .into_iter()
@@ -40,12 +43,14 @@ async fn build_zonefile(
            .collect();
     */
 
-    let records = Api::<DNSRecord>::all(client.clone())
+    let origin_suffix = &format!(".{origin}");
+
+    let records = Api::<Record>::all(client.clone())
         .list(&zone_ref)
         .await?
         .into_iter()
         .map(|record| {
-            let DNSRecordSpec {
+            let RecordSpec {
                 name,
                 type_,
                 class,
@@ -54,8 +59,10 @@ async fn build_zonefile(
                 ..
             } = record.spec;
 
+            let shortened_name = name.strip_suffix(origin_suffix).unwrap_or(&name);
+
             format!(
-                "{name} {ttl} {class} {type_} {rdata}",
+                "{shortened_name} {ttl} {class} {type_} {rdata}",
                 ttl = ttl.unwrap_or(zonefile.spec.ttl)
             )
         })
@@ -90,12 +97,12 @@ async fn build_zonefile(
 
 /// Applied a [`TARGET_ZONEFILE_LABEL`] label which references our zonefile.
 /// This label is monitored by our controller, causing reconciliation loops
-/// to fire for [`ZoneFile`]s referenced by [`DNSZone`]s, when the zone itself
+/// to fire for [`ZoneFile`]s referenced by [`Zone`]s, when the zone itself
 /// is updated.
 async fn apply_zonefile_backref(
     client: Client,
     zonefile: &ZoneFile,
-    zone: &DNSZone,
+    zone: &Zone,
 ) -> Result<(), kube::Error> {
     let zonefile_ref = format!(
         "{}.{}",
@@ -109,7 +116,7 @@ async fn apply_zonefile_backref(
             zonefile.name_any()
         );
 
-        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
+        Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_metadata(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -131,7 +138,7 @@ async fn reconcile_zonefiles(
     zonefile: Arc<ZoneFile>,
     ctx: Arc<Data>,
 ) -> Result<Action, kube::Error> {
-    let zone = Api::<DNSZone>::namespaced(
+    let zone = Api::<Zone>::namespaced(
         ctx.client.clone(),
         &zonefile
             .spec
@@ -214,9 +221,9 @@ async fn reconcile_zonefiles(
         //
         // It'd be better to be able to update both serial and hash in an atomic
         // fashion, but none of the attempts I've made have succeeded.
-        Api::<ZoneFile>::namespaced(ctx.client.clone(), zone.namespace().as_ref().unwrap())
+        Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
             .patch(
-                &zone.name_any(),
+                &zonefile.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
                 &Patch::Merge(json!({
                     "spec": {
@@ -226,9 +233,9 @@ async fn reconcile_zonefiles(
             )
             .await?;
 
-        Api::<ZoneFile>::namespaced(ctx.client.clone(), zone.namespace().as_ref().unwrap())
+        Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
             .patch_status(
-                &zone.name_any(),
+                &zonefile.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
                 &Patch::Merge(json!({
                     "status": {
@@ -255,15 +262,9 @@ pub async fn reconcile(client: Client) {
 
     let zone_controller = Controller::new(zonefiles, watcher::Config::default())
         .watches(
-            Api::<DNSZone>::all(client.clone()),
+            Api::<Zone>::all(client.clone()),
             watcher::Config::default(),
-            |zone| {
-                let parent = zone.labels().get(TARGET_ZONEFILE_LABEL)?;
-
-                let (name, namespace) = parent.split_once('.')?;
-
-                Some(ObjectRef::new(name).within(namespace))
-            },
+            dnsetes_crds::watch_reference(TARGET_ZONEFILE_LABEL),
         )
         .shutdown_on_signal()
         .run(

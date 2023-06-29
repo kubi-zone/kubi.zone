@@ -2,24 +2,24 @@
 
 ```mermaid
 flowchart TD
-    Service-- owns -->DNSRecord
-    Ingress-- owns -->DNSRecord
+    Service-- owns -->Record
+    Ingress-- owns -->Record
     RecordName-- subdomain of -->ZoneName1
-    DNSRecord-- has -->RecordName["fqdn in name"]
-    DNSRecord-- has -->ZoneRef1
+    Record-- has -->RecordName["fqdn in name"]
+    Record-- has -->ZoneRef1
     subgraph OR1[OR]
         ZoneRef1[zoneRef]
         RecordName
     end
-    ZoneRef1-- references --> DNSZone
-    ZoneRef2-- references --> DNSZone
-    DNSZone-- has -->ZoneName1["fqdn in name"]
+    ZoneRef1-- references --> Zone
+    ZoneRef2-- references --> Zone
+    Zone-- has -->ZoneName1["fqdn in name"]
     ZoneName2["fqdn in name"]
     subgraph OR2[OR]
         ZoneRef2[zoneRef]
     end
-    DNSZone-- serialized into -->ZoneFile
-    DNSZone-- defines -->Route53
+    Zone-- serialized into -->ZoneFile
+    Zone-- defines -->Route53
     subgraph zonefile module
         ZoneFile
     end

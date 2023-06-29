@@ -1,5 +1,5 @@
 use dnsetes_crds::ZoneRef;
-use kube::CustomResource;
+use kube::{CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -41,8 +41,9 @@ pub const TARGET_ZONEFILE_LABEL: &str = "dnsetes.pius.dev/zonefile";
     namespaced
 )]
 #[kube(status = "ZoneFileStatus")]
-#[kube(printcolumn = r#"{"name":"zone", "jsonPath": ".spec.zone.name", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"zone", "jsonPath": ".spec.zoneRef.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".spec.serial", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneFileSpec {
     pub zone_ref: ZoneRef,
@@ -58,6 +59,23 @@ pub struct ZoneFileSpec {
     pub expire: u32,
     #[serde(default = "defaults::negative_response_cache")]
     pub negative_response_cache: u32,
+}
+
+impl ZoneFile {
+    /// Retrieve the [`ZoneFile`]'s `zoneRef`, but populate the `namespace` variable,
+    /// if not specified by the zoneref itself.
+    pub fn zone_ref(&self) -> ZoneRef {
+        ZoneRef {
+            name: self.spec.zone_ref.name.clone(),
+            namespace: self
+                .spec
+                .zone_ref
+                .namespace
+                .as_ref()
+                .or(self.namespace().as_ref())
+                .cloned(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]

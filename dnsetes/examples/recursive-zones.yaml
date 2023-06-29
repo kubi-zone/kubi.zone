@@ -1,6 +1,6 @@
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
-kind: DNSZone
+kind: Zone
 metadata:
   name: example-org
   namespace: dnsetes
@@ -8,7 +8,7 @@ spec:
   name: example.org.
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
-kind: DNSZone
+kind: Zone
 metadata:
   name: fqdn-example-org
   namespace: dnsetes
@@ -16,7 +16,7 @@ spec:
   name: fqdn.example.org.
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
-kind: DNSZone
+kind: Zone
 metadata:
   name: ref-example-org
   namespace: dnsetes

@@ -2,15 +2,15 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: dnsrecords.dnsetes.pius.dev
+  name: Records.dnsetes.pius.dev
 spec:
   group: dnsetes.pius.dev
   names:
     categories: []
-    kind: DNSRecord
-    plural: dnsrecords
+    kind: Record
+    plural: Records
     shortNames: []
-    singular: dnsrecord
+    singular: Record
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -23,7 +23,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Auto-generated derived type for DNSRecordSpec via `CustomResource`
+        description: Auto-generated derived type for RecordSpec via `CustomResource`
         properties:
           spec:
             properties:
@@ -66,7 +66,7 @@ spec:
             type: object
         required:
         - spec
-        title: DNSRecord
+        title: Record
         type: object
     served: true
     storage: true

@@ -1,10 +1,28 @@
-use std::fmt::Display;
+use std::{
+    fmt::{Debug, Display},
+    hash::Hash,
+};
 
-use kube::{CustomResource, ResourceExt};
+use kube::{runtime::reflector::ObjectRef, CustomResource, Resource, ResourceExt};
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
+
+pub fn watch_reference<Parent, K>(label: &'static str) -> impl Fn(K) -> Option<ObjectRef<Parent>>
+where
+    K: ResourceExt,
+    Parent: Clone + Resource + DeserializeOwned + Debug + Send + 'static,
+    Parent::DynamicType: Default + Debug + Clone + Eq + Hash,
+{
+    |object| {
+        let parent = object.labels().get(label)?;
+
+        let (name, namespace) = parent.split_once('.')?;
+
+        Some(ObjectRef::new(name).within(namespace))
+    }
+}
 
 mod defaults {
     pub const CLASS: &str = "IN";
@@ -29,23 +47,23 @@ mod defaults {
 #[kube(
     group = "dnsetes.pius.dev",
     version = "v1alpha1",
-    kind = "DNSZone",
+    kind = "Zone",
     namespaced
 )]
-#[kube(status = "DNSZoneStatus")]
+#[kube(status = "ZoneStatus")]
 #[kube(printcolumn = r#"{"name":"name", "jsonPath": ".spec.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
-#[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "integer"}"#)]
+#[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
 #[kube(
-    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.annotations.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
 )]
 #[serde(rename_all = "camelCase")]
-pub struct DNSZoneSpec {
+pub struct ZoneSpec {
     pub name: String,
     pub zone_ref: Option<ZoneRef>,
 }
 
-impl DNSZone {
+impl Zone {
     pub fn zone_ref(&self) -> ZoneRef {
         ZoneRef {
             name: self.name_any(),
@@ -56,7 +74,7 @@ impl DNSZone {
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct DNSZoneStatus {
+pub struct ZoneStatus {
     pub fqdn: Option<String>,
     pub hash: Option<String>,
 }
@@ -77,20 +95,20 @@ pub struct DNSZoneStatus {
 #[kube(
     group = "dnsetes.pius.dev",
     version = "v1alpha1",
-    kind = "DNSRecord",
+    kind = "Record",
     namespaced
 )]
-#[kube(status = "DNSRecordStatus")]
+#[kube(status = "RecordStatus")]
 #[kube(printcolumn = r#"{"name":"name", "jsonPath": ".spec.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"class", "jsonPath": ".spec.class", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"type", "jsonPath": ".spec.type", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"data", "jsonPath": ".spec.rdata", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
 #[kube(
-    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.annotations.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
 )]
 #[serde(rename_all = "camelCase")]
-pub struct DNSRecordSpec {
+pub struct RecordSpec {
     pub name: String,
     pub zone_ref: Option<ZoneRef>,
     #[serde(rename = "type")]
@@ -102,7 +120,7 @@ pub struct DNSRecordSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
-pub struct DNSRecordStatus {
+pub struct RecordStatus {
     pub fqdn: Option<String>,
 }
 
@@ -117,7 +135,7 @@ pub struct ZoneRef {
 impl Display for ZoneRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(namespace) = &self.namespace {
-            write!(f, "{namespace}.{}", self.name)
+            write!(f, "{}.{namespace}", self.name)
         } else {
             f.write_str(&self.name)
         }
@@ -128,11 +146,11 @@ impl Display for ZoneRef {
 mod tests {
     use kube::CustomResourceExt;
 
-    use crate::{DNSRecord, DNSZone};
+    use crate::{Record, Zone};
 
     #[test]
     fn dump_crds() {
-        println!("---{}", serde_yaml::to_string(&DNSZone::crd()).unwrap());
-        println!("---{}", serde_yaml::to_string(&DNSRecord::crd()).unwrap());
+        println!("---{}", serde_yaml::to_string(&Zone::crd()).unwrap());
+        println!("---{}", serde_yaml::to_string(&Record::crd()).unwrap());
     }
 }

@@ -1,6 +1,6 @@
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
-kind: DNSZone
+kind: Zone
 metadata:
   name: example-org
   namespace: dnsetes
@@ -8,7 +8,7 @@ spec:
   name: example.org.
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
-kind: DNSRecord
+kind: Record
 metadata:
   name: www-ref-example-org
   namespace: dnsetes
@@ -18,7 +18,7 @@ spec:
   rdata: "192.168.0.1"
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
-kind: DNSRecord
+kind: Record
 metadata:
   name: www-example-org
   namespace: dnsetes
@@ -33,5 +33,5 @@ metadata:
   name: example
   namespace: dnsetes
 spec:
-  zone:
+  zoneRef:
     name: example-org
