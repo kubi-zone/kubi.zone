@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use kube::{CustomResourceExt, Resource};
 use kubizone_crds::{Record, Zone};
+use kubizone_zonefile_crds::ZoneFile;
 
 fn dump_crd<C>(path: &Path) -> Result<(), std::io::Error>
 where
@@ -12,7 +13,7 @@ where
 
     std::fs::create_dir_all(&directory)?;
 
-    let name = C::crd_name();
+    let name = C::kind(&());
 
     let path = directory.join(format!("{name}.yaml"));
 
@@ -34,4 +35,5 @@ fn main() {
 
     dump_crd::<Zone>(&path).unwrap();
     dump_crd::<Record>(&path).unwrap();
+    dump_crd::<ZoneFile>(&path).unwrap();
 }

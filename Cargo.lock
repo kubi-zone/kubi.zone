@@ -177,6 +177,7 @@ dependencies = [
  "k8s-openapi",
  "kube",
  "kubizone-crds",
+ "kubizone-zonefile-crds",
  "serde_yaml",
 ]
 

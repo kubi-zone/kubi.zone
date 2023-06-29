@@ -64,7 +64,7 @@ pub const TARGET_ZONEFILE_LABEL: &str = "kubi.zone/zonefile";
 /// serials as necessary.
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema, Hash)]
 #[kube(
-    group = "kubi.zone",
+    group = "zonefile.kubi.zone",
     version = "v1alpha1",
     kind = "ZoneFile",
     namespaced

@@ -6,6 +6,7 @@ description = "used for writing yaml-formatted custom resource definitions to cr
 
 [dependencies]
 kubizone-crds = { path = "../kubizone-crds" }
+kubizone-zonefile-crds = { path = "../kubizone-zonefile-crds" }
 kube = { version = "0.83.0", default-features = false }
 k8s-openapi = { version = "0.18.0", features = ["v1_25"] }
 serde_yaml = "0.9.21"
