@@ -27,10 +27,10 @@ async fn set_zone_fqdn(client: Client, zone: &DNSZone, fqdn: &str) -> Result<(),
         .status
         .as_ref()
         .and_then(|status| status.fqdn.as_ref())
-        .is_some_and(|current_fqdn| current_fqdn == &fqdn)
+        .is_some_and(|current_fqdn| current_fqdn == fqdn)
     {
         info!("updating fqdn for zone {} to {}", zone.name_any(), fqdn);
-        Api::<DNSZone>::namespaced(client, &zone.metadata.namespace.as_ref().unwrap())
+        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_status(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -61,7 +61,7 @@ async fn set_zone_parent_ref(
             zone.name_any()
         );
 
-        Api::<DNSZone>::namespaced(client, &zone.metadata.namespace.as_ref().unwrap())
+        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_metadata(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -92,10 +92,10 @@ async fn set_record_fqdn(
         .status
         .as_ref()
         .and_then(|status| status.fqdn.as_ref())
-        .is_some_and(|current_fqdn| current_fqdn == &fqdn)
+        .is_some_and(|current_fqdn| current_fqdn == fqdn)
     {
         info!("updating fqdn for record {} to {}", record.name_any(), fqdn);
-        Api::<DNSRecord>::namespaced(client, &record.metadata.namespace.as_ref().unwrap())
+        Api::<DNSRecord>::namespaced(client, record.namespace().as_ref().unwrap())
             .patch_status(
                 &record.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -126,7 +126,7 @@ async fn set_record_parent_ref(
             "updating record {}'s {PARENT_ZONE_LABEL} to {parent_ref}",
             record.name_any()
         );
-        Api::<DNSRecord>::namespaced(client, &record.metadata.namespace.as_ref().unwrap())
+        Api::<DNSRecord>::namespaced(client, record.namespace().as_ref().unwrap())
             .patch_metadata(
                 &record.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -209,7 +209,7 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
         //
         // It'd be better to be able to update both serial and hash in an atomic
         // fashion, but none of the attempts I've made have succeeded.
-        Api::<DNSZone>::namespaced(client.clone(), &zone.namespace().as_ref().unwrap())
+        Api::<DNSZone>::namespaced(client.clone(), zone.namespace().as_ref().unwrap())
             .patch(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -221,7 +221,7 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
             )
             .await?;
 
-        Api::<DNSZone>::namespaced(client, &zone.namespace().as_ref().unwrap())
+        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_status(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -239,7 +239,7 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
 
 async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the zone
-    if zone.spec.name.ends_with(".") {
+    if zone.spec.name.ends_with('.') {
         set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.name).await?;
     } else {
         let Some(zone_ref) = zone.spec.zone_ref.as_ref() else {
@@ -288,7 +288,7 @@ async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, k
 
 async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the record
-    if record.spec.name.ends_with(".") {
+    if record.spec.name.ends_with('.') {
         set_record_fqdn(ctx.client.clone(), &record, &record.spec.name).await?;
 
         // Retrieve all zones with a defined fqdn.
@@ -297,15 +297,10 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
             .await?
             .into_iter()
             .filter_map(|zone| {
-                if let Some(fqdn) = zone
-                    .status
+                zone.status
                     .as_ref()
-                    .and_then(|status| status.fqdn.as_ref().map(|fqdn| fqdn.clone()))
-                {
-                    Some((fqdn, zone))
-                } else {
-                    None
-                }
+                    .and_then(|status| status.fqdn.as_ref().cloned())
+                    .map(|fqdn| (fqdn, zone))
             })
             .collect();
 
@@ -403,7 +398,7 @@ pub async fn reconcile(client: Client) {
             |zone| {
                 let parent = zone.labels().get("dnsetes.pius.dev/parent-zone")?;
 
-                let (namespace, name) = parent.split_once("/")?;
+                let (namespace, name) = parent.split_once('.')?;
 
                 Some(ObjectRef::new(name).within(namespace))
             },
@@ -432,7 +427,7 @@ pub async fn reconcile(client: Client) {
             |zone| {
                 let parent = zone.labels().get("dnsetes.pius.dev/parent-zone")?;
 
-                let (name, namespace) = parent.split_once(".")?;
+                let (name, namespace) = parent.split_once('.')?;
 
                 Some(ObjectRef::new(name).within(namespace))
             },

@@ -117,22 +117,19 @@ async fn reconcile_zonefiles(
             zonefile.name_any()
         );
 
-        Api::<DNSZone>::namespaced(
-            ctx.client.clone(),
-            &zone.metadata.namespace.as_ref().unwrap(),
-        )
-        .patch_metadata(
-            &zone.name_any(),
-            &PatchParams::apply(CONTROLLER_NAME),
-            &Patch::Merge(json!({
-                "metadata": {
-                    "labels": {
-                        TARGET_ZONEFILE_LABEL: zonefile_ref
-                    },
-                }
-            })),
-        )
-        .await?;
+        Api::<DNSZone>::namespaced(ctx.client.clone(), zone.namespace().as_ref().unwrap())
+            .patch_metadata(
+                &zone.name_any(),
+                &PatchParams::apply(CONTROLLER_NAME),
+                &Patch::Merge(json!({
+                    "metadata": {
+                        "labels": {
+                            TARGET_ZONEFILE_LABEL: zonefile_ref
+                        },
+                    }
+                })),
+            )
+            .await?;
     }
 
     let last_serial = zonefile.status.as_ref().and_then(|status| status.serial);
@@ -203,7 +200,7 @@ pub async fn reconcile(client: Client) {
             |zone| {
                 let parent = zone.labels().get(TARGET_ZONEFILE_LABEL)?;
 
-                let (name, namespace) = parent.split_once(".")?;
+                let (name, namespace) = parent.split_once('.')?;
 
                 Some(ObjectRef::new(name).within(namespace))
             },
