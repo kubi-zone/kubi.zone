@@ -1,5 +1,5 @@
-use dnsetes_crds::{DNSRecord, DNSRecordSpec, DNSZone, DNSZoneSpec};
-use dnsetes_zonefile_crds::{ZoneFile, TARGET_ZONEFILE_LABEL};
+use dnsetes_crds::{DNSRecord, DNSRecordSpec, DNSZone};
+use dnsetes_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
 use futures::StreamExt;
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
@@ -19,10 +19,14 @@ struct Data {
 pub const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zonefile";
 use dnsetes_crds::PARENT_ZONE_LABEL;
 
-async fn build_zonefile(client: Client, zone: &DNSZone) -> Result<String, kube::Error> {
+async fn build_zonefile(
+    client: Client,
+    zonefile: &ZoneFile,
+    origin: &str,
+) -> Result<String, kube::Error> {
     let zone_ref = ListParams::default().labels(&format!(
         "{PARENT_ZONE_LABEL}={}",
-        zone.zone_ref().to_string()
+        zonefile.spec.zone_ref.to_string()
     ));
 
     // Get a hash of the collective child zones and records and use
@@ -52,26 +56,25 @@ async fn build_zonefile(client: Client, zone: &DNSZone) -> Result<String, kube::
 
             format!(
                 "{name} {ttl} {class} {type_} {rdata}",
-                ttl = ttl.unwrap_or(zone.spec.ttl)
+                ttl = ttl.unwrap_or(zonefile.spec.ttl)
             )
         })
         .collect::<Vec<_>>()
         .join("\n");
 
-    let DNSZoneSpec {
-        name,
+    let ZoneFileSpec {
         serial,
         refresh,
         retry,
         expire,
         negative_response_cache,
         ..
-    } = &zone.spec;
+    } = &zonefile.spec;
 
     let zone = indoc::formatdoc! {"
-        $ORIGIN {name}
+        $ORIGIN {origin}
 
-        {name} IN SOA ns.{name} noc.{name} (
+        {origin} IN SOA ns.{origin} noc.{origin} (
             {serial}
             {refresh}
             {retry}
@@ -85,26 +88,15 @@ async fn build_zonefile(client: Client, zone: &DNSZone) -> Result<String, kube::
     Ok(zone)
 }
 
-async fn reconcile_zonefiles(
-    zonefile: Arc<ZoneFile>,
-    ctx: Arc<Data>,
-) -> Result<Action, kube::Error> {
-    let zone = Api::<DNSZone>::namespaced(
-        ctx.client.clone(),
-        &zonefile
-            .spec
-            .zone
-            .namespace
-            .as_ref()
-            .or(zonefile.namespace().as_ref())
-            .cloned()
-            .unwrap(),
-    )
-    .get(&zonefile.spec.zone.name)
-    .await?;
-
-    // Create a label on the DNSZone pointing back to our ZoneFile so we
-    // our reconciliation loop triggers, if the DNSZone updates.
+/// Applied a [`TARGET_ZONEFILE_LABEL`] label which references our zonefile.
+/// This label is monitored by our controller, causing reconciliation loops
+/// to fire for [`ZoneFile`]s referenced by [`DNSZone`]s, when the zone itself
+/// is updated.
+async fn apply_zonefile_backref(
+    client: Client,
+    zonefile: &ZoneFile,
+    zone: &DNSZone,
+) -> Result<(), kube::Error> {
     let zonefile_ref = format!(
         "{}.{}",
         zonefile.name_any(),
@@ -117,7 +109,7 @@ async fn reconcile_zonefiles(
             zonefile.name_any()
         );
 
-        Api::<DNSZone>::namespaced(ctx.client.clone(), zone.namespace().as_ref().unwrap())
+        Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_metadata(
                 &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
@@ -132,14 +124,44 @@ async fn reconcile_zonefiles(
             .await?;
     }
 
-    let last_serial = zonefile.status.as_ref().and_then(|status| status.serial);
+    Ok(())
+}
 
-    if last_serial != Some(zone.spec.serial) {
+async fn reconcile_zonefiles(
+    zonefile: Arc<ZoneFile>,
+    ctx: Arc<Data>,
+) -> Result<Action, kube::Error> {
+    let zone = Api::<DNSZone>::namespaced(
+        ctx.client.clone(),
+        &zonefile
+            .spec
+            .zone_ref
+            .namespace
+            .as_ref()
+            .or(zonefile.namespace().as_ref())
+            .cloned()
+            .unwrap(),
+    )
+    .get(&zonefile.spec.zone_ref.name)
+    .await?;
+
+    apply_zonefile_backref(ctx.client.clone(), &zonefile, &zone).await?;
+
+    let Some(zone_hash) = zone.status.as_ref().and_then(|zone| zone.hash.as_ref()) else {
+        debug!("zone {} has not yet computed its hash, requeuing", zone.name_any());
+        return Ok(Action::requeue(Duration::from_secs(5)))
+    };
+
+    let last_hash = zonefile
+        .status
+        .as_ref()
+        .and_then(|status| status.hash.as_ref());
+
+    if last_hash != Some(zone_hash) {
         info!(
-            "zone {}'s serial is not equal to zonefile {}'s ({} != {last_serial:?}), regenerating configmap",
+            "zone {}'s hash is not equal to zonefile {}'s ({zone_hash} != {last_hash:?}), regenerating configmap and rotating serial.",
             zone.name_any(),
             zonefile.name_any(),
-            zone.spec.serial
         );
 
         let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
@@ -153,7 +175,7 @@ async fn reconcile_zonefiles(
             },
             data: Some(BTreeMap::from([(
                 "zonefile".to_string(),
-                build_zonefile(ctx.client.clone(), &zone).await?,
+                build_zonefile(ctx.client.clone(), &zonefile, &zone.spec.name).await?,
             )])),
             ..Default::default()
         };
@@ -166,14 +188,52 @@ async fn reconcile_zonefiles(
             )
             .await?;
 
-        Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
+        // Compute a serial based on the current datetime in UTC as per:
+        // https://datatracker.ietf.org/doc/html/rfc1912#section-2.2
+        let now = time::OffsetDateTime::now_utc();
+        #[rustfmt::skip]
+        let now_serial
+            = now.year()  as u32 * 1000000
+            + now.month() as u32 * 10000
+            + now.day()   as u32 * 100;
+
+        // If it's a new day, use YYYYMMDD00, otherwise just use the increment
+        // of the old serial.
+        let next_serial = std::cmp::max(now_serial, zonefile.spec.serial + 1);
+
+        info!(
+            "updating zone {}'s serial (before: {}, now: {next_serial})",
+            zone.name_any(),
+            zonefile.spec.serial
+        );
+
+        // We apply the serial patch first. That way, if the hash status
+        // application fails, the failure mode is that serial gets bumped
+        // again on the next reconciliation loop, and then the hash update
+        // hopefully works the second time around.
+        //
+        // It'd be better to be able to update both serial and hash in an atomic
+        // fashion, but none of the attempts I've made have succeeded.
+        Api::<ZoneFile>::namespaced(ctx.client.clone(), zone.namespace().as_ref().unwrap())
+            .patch(
+                &zone.name_any(),
+                &PatchParams::apply(CONTROLLER_NAME),
+                &Patch::Merge(json!({
+                    "spec": {
+                        "serial": next_serial,
+                    },
+                })),
+            )
+            .await?;
+
+        Api::<ZoneFile>::namespaced(ctx.client.clone(), zone.namespace().as_ref().unwrap())
             .patch_status(
-                &zonefile.name_any(),
+                &zone.name_any(),
                 &PatchParams::apply(CONTROLLER_NAME),
                 &Patch::Merge(json!({
                     "status": {
-                        "serial": zone.spec.serial
-                    }
+                        "hash": zone_hash,
+                    },
                 })),
             )
             .await?;

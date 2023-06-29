@@ -183,43 +183,9 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
 
     if last_hash != Some(&new_hash) {
         info!(
-            "zone {}'s hash (before: {last_hash:?}, now: {new_hash}) changed, updating serial",
+            "zone {}'s hash changed (before: {last_hash:?}, now: {new_hash})",
             zone.name_any()
         );
-
-        // Compute a serial based on the current datetime in UTC.
-        let now = time::OffsetDateTime::now_utc();
-        #[rustfmt::skip]
-        let now_serial
-            = now.year()  as u32 * 1000000
-            + now.month() as u32 * 10000
-            + now.day()   as u32 * 100;
-
-        let next_serial = std::cmp::max(now_serial, zone.spec.serial + 1);
-
-        info!(
-            "updating zone {}'s serial (before: {}, now: {next_serial})",
-            zone.name_any(),
-            zone.spec.serial
-        );
-
-        // We apply the serial patch first, because in that case the hash status
-        // application fails, the failure mode is that serial gets bumped again, and
-        // then the hash update hopefully works the second time around.
-        //
-        // It'd be better to be able to update both serial and hash in an atomic
-        // fashion, but none of the attempts I've made have succeeded.
-        Api::<DNSZone>::namespaced(client.clone(), zone.namespace().as_ref().unwrap())
-            .patch(
-                &zone.name_any(),
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Merge(json!({
-                    "spec": {
-                        "serial": next_serial,
-                    },
-                })),
-            )
-            .await?;
 
         Api::<DNSZone>::namespaced(client, zone.namespace().as_ref().unwrap())
             .patch_status(

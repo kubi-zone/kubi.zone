@@ -4,39 +4,14 @@ use kube::{CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-mod defaults {
-    pub const REFRESH: u32 = 7600;
-    pub const TTL: u32 = 3600;
-    pub const SERIAL: u32 = 1;
-    pub const RETRY: u32 = 3600;
-    pub const EXPIRE: u32 = 3600;
-    pub const NEGATIVE_RESPONSE_CACHE: u32 = 3600;
-    pub const CLASS: &str = "IN";
+pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
 
-    pub(super) fn refresh() -> u32 {
-        REFRESH
-    }
-    pub(super) fn ttl() -> u32 {
-        TTL
-    }
-    pub(super) fn serial() -> u32 {
-        SERIAL
-    }
-    pub(super) fn retry() -> u32 {
-        RETRY
-    }
-    pub(super) fn expire() -> u32 {
-        EXPIRE
-    }
-    pub(super) fn negative_response_cache() -> u32 {
-        NEGATIVE_RESPONSE_CACHE
-    }
+mod defaults {
+    pub const CLASS: &str = "IN";
     pub(super) fn class() -> String {
         CLASS.to_string()
     }
 }
-
-pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
 
 #[derive(
     CustomResource,
@@ -59,8 +34,8 @@ pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
 )]
 #[kube(status = "DNSZoneStatus")]
 #[kube(printcolumn = r#"{"name":"name", "jsonPath": ".spec.name", "type": "string"}"#)]
-#[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".spec.serial", "type": "integer"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "integer"}"#)]
 #[kube(
     printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.annotations.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
 )]
@@ -68,18 +43,6 @@ pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
 pub struct DNSZoneSpec {
     pub name: String,
     pub zone_ref: Option<ZoneRef>,
-    #[serde(default = "defaults::ttl")]
-    pub ttl: u32,
-    #[serde(default = "defaults::serial")]
-    pub serial: u32,
-    #[serde(default = "defaults::refresh")]
-    pub refresh: u32,
-    #[serde(default = "defaults::retry")]
-    pub retry: u32,
-    #[serde(default = "defaults::expire")]
-    pub expire: u32,
-    #[serde(default = "defaults::negative_response_cache")]
-    pub negative_response_cache: u32,
 }
 
 impl DNSZone {
