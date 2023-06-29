@@ -1,5 +1,5 @@
-use dnsetes_crds::{Record, RecordSpec, Zone};
-use dnsetes_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
+use kubizone_crds::{Record, RecordSpec, Zone};
+use kubizone_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
 use futures::StreamExt;
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
@@ -16,8 +16,8 @@ struct Data {
     client: Client,
 }
 
-pub const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zonefile";
-use dnsetes_crds::PARENT_ZONE_LABEL;
+pub const CONTROLLER_NAME: &str = "kubi.zone/zonefile";
+use kubizone_crds::PARENT_ZONE_LABEL;
 
 /// Builds the actual [zone file](https://datatracker.ietf.org/doc/html/rfc1035#section-5)
 /// based on [`Record`]s and [`Zone`]s pointing to the [`Zone`] referenced by [`ZoneFile`].
@@ -258,7 +258,7 @@ pub async fn reconcile(client: Client) {
         .watches(
             Api::<Zone>::all(client.clone()),
             watcher::Config::default(),
-            dnsetes_crds::watch_reference(TARGET_ZONEFILE_LABEL),
+            kubizone_crds::watch_reference(TARGET_ZONEFILE_LABEL),
         )
         .shutdown_on_signal()
         .run(

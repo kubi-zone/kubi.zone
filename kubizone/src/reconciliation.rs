@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::select;
 
-use dnsetes_crds::{Record, Zone, PARENT_ZONE_LABEL};
+use kubizone_crds::{Record, Zone, PARENT_ZONE_LABEL};
 use kube::{
     api::{ListParams, Patch, PatchParams},
     runtime::{controller::Action, watcher, Controller},
@@ -20,7 +20,7 @@ struct Data {
     client: Client,
 }
 
-pub const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zone-resolver";
+pub const CONTROLLER_NAME: &str = "kubi.zone/zone-resolver";
 
 async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), kube::Error> {
     if !zone
@@ -363,7 +363,7 @@ pub async fn reconcile(client: Client) {
         .watches(
             Api::<Zone>::all(client.clone()),
             watcher::Config::default(),
-            dnsetes_crds::watch_reference(PARENT_ZONE_LABEL),
+            kubizone_crds::watch_reference(PARENT_ZONE_LABEL),
         )
         .shutdown_on_signal()
         .run(

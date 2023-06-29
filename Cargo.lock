@@ -238,60 +238,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dnsetes"
-version = "0.1.0"
-dependencies = [
- "dnsetes-crds",
- "futures",
- "k8s-openapi",
- "kube",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "dnsetes-crds"
-version = "0.1.0"
-dependencies = [
- "k8s-openapi",
- "kube",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
-]
-
-[[package]]
-name = "dnsetes-zonefile"
-version = "0.1.0"
-dependencies = [
- "dnsetes-crds",
- "dnsetes-zonefile-crds",
- "futures",
- "indoc",
- "k8s-openapi",
- "kube",
- "time",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "dnsetes-zonefile-crds"
-version = "0.1.0"
-dependencies = [
- "dnsetes-crds",
- "k8s-openapi",
- "kube",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
-]
-
-[[package]]
 name = "dyn-clone"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,6 +694,60 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+]
+
+[[package]]
+name = "kubizone"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "k8s-openapi",
+ "kube",
+ "kubizone-crds",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "kubizone-crds"
+version = "0.1.0"
+dependencies = [
+ "k8s-openapi",
+ "kube",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+]
+
+[[package]]
+name = "kubizone-zonefile"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "indoc",
+ "k8s-openapi",
+ "kube",
+ "kubizone-crds",
+ "kubizone-zonefile-crds",
+ "time",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "kubizone-zonefile-crds"
+version = "0.1.0"
+dependencies = [
+ "k8s-openapi",
+ "kube",
+ "kubizone-crds",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
 ]
 
 [[package]]

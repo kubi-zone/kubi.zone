@@ -1,11 +1,12 @@
 [package]
-name = "dnsetes-crds"
+name = "kubizone-zonefile-crds"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+kubizone-crds = { path = "../kubizone-crds" }
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = { version = "1.0.96" }
 schemars = { version = "0.8.12" }

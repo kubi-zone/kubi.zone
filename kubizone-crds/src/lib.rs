@@ -7,7 +7,7 @@ use kube::{runtime::reflector::ObjectRef, CustomResource, Resource, ResourceExt}
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub const PARENT_ZONE_LABEL: &str = "dnsetes.pius.dev/parent-zone";
+pub const PARENT_ZONE_LABEL: &str = "kubi.zone/parent-zone";
 
 pub fn watch_reference<Parent, K>(label: &'static str) -> impl Fn(K) -> Option<ObjectRef<Parent>>
 where
@@ -45,7 +45,7 @@ mod defaults {
     Ord,
 )]
 #[kube(
-    group = "dnsetes.pius.dev",
+    group = "kubi.zone",
     version = "v1alpha1",
     kind = "Zone",
     namespaced
@@ -55,7 +55,7 @@ mod defaults {
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
 #[kube(
-    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kubizone\\.pius\\.dev/parent-zone", "type": "string"}"#
 )]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneSpec {
@@ -93,7 +93,7 @@ pub struct ZoneStatus {
     Ord,
 )]
 #[kube(
-    group = "dnsetes.pius.dev",
+    group = "kubi.zone",
     version = "v1alpha1",
     kind = "Record",
     namespaced
@@ -105,7 +105,7 @@ pub struct ZoneStatus {
 #[kube(printcolumn = r#"{"name":"data", "jsonPath": ".spec.rdata", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
 #[kube(
-    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.dnsetes\\.pius\\.dev/parent-zone", "type": "string"}"#
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kubizone\\.pius\\.dev/parent-zone", "type": "string"}"#
 )]
 #[serde(rename_all = "camelCase")]
 pub struct RecordSpec {

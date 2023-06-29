@@ -1,4 +1,4 @@
-use dnsetes_crds::ZoneRef;
+use kubizone_crds::ZoneRef;
 use kube::{CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -52,19 +52,19 @@ pub mod defaults {
     }
 }
 
-/// Label attached to [`Zone`](dnsetes_crds::Zone)s as backreferences
+/// Label attached to [`Zone`](kubizone_crds::Zone)s as backreferences
 /// to a single downstream [`ZoneFile`] generated from it.
 /// 
 /// Used by the controller to trigger reconciliation when upstream
 /// zones change.
-pub const TARGET_ZONEFILE_LABEL: &str = "dnsetes.pius.dev/zonefile";
+pub const TARGET_ZONEFILE_LABEL: &str = "kubi.zone/zonefile";
 
-/// A [`ZoneFile`] references an upstream [`Zone`](dnsetes_crds::Zone) and (re)builds
+/// A [`ZoneFile`] references an upstream [`Zone`](kubizone_crds::Zone) and (re)builds
 /// a configmap of the same name, whenever the zone changes, automatically incrementing
 /// serials as necessary.
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema, Hash)]
 #[kube(
-    group = "dnsetes.pius.dev",
+    group = "kubi.zone",
     version = "v1alpha1",
     kind = "ZoneFile",
     namespaced
@@ -75,7 +75,7 @@ pub const TARGET_ZONEFILE_LABEL: &str = "dnsetes.pius.dev/zonefile";
 #[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneFileSpec {
-    /// Reference to a [`Zone`](dnsetes_crds::Zone), optionally in a different namespace.
+    /// Reference to a [`Zone`](kubizone_crds::Zone), optionally in a different namespace.
     pub zone_ref: ZoneRef,
 
     /// Time-to-Live. Represents how long (in seconds) recursive resolvers should
@@ -155,11 +155,11 @@ impl ZoneFile {
 }
 
 /// Describes the current state of the [`ZoneFile`], tracks state of
-/// the upstream [`Zone`](dnsetes_crds::Zone), to determine when the
+/// the upstream [`Zone`](kubizone_crds::Zone), to determine when the
 /// output `ConfigMap` should be re-generated.
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 pub struct ZoneFileStatus {
-    /// Last observed hash of the upstream [`Zone`](dnsetes_crds::Zone)
+    /// Last observed hash of the upstream [`Zone`](kubizone_crds::Zone)
     /// 
     /// Used by the zonefile controller to trigger configmap rebuilds
     /// and zone serial rotation.
