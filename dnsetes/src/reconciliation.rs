@@ -148,7 +148,7 @@ async fn set_record_parent_ref(
     Ok(())
 }
 
-async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), kube::Error> {
+async fn update_zone_hash(zone: Arc<DNSZone>, client: Client) -> Result<(), kube::Error> {
     let new_hash = {
         // Reference to this zone, which other zones and records
         // will use to refer to it by.
@@ -179,11 +179,11 @@ async fn rotate_zone_serial(zone: Arc<DNSZone>, client: Client) -> Result<(), ku
         hasher.finish().to_string()
     };
 
-    let last_hash = zone.status.as_ref().and_then(|status| status.hash.as_ref());
+    let current_hash = zone.status.as_ref().and_then(|status| status.hash.as_ref());
 
-    if last_hash != Some(&new_hash) {
+    if current_hash != Some(&new_hash) {
         info!(
-            "zone {}'s hash changed (before: {last_hash:?}, now: {new_hash})",
+            "zone {}'s hash changed (before: {current_hash:?}, now: {new_hash})",
             zone.name_any()
         );
 
@@ -248,7 +248,7 @@ async fn reconcile_zones(zone: Arc<DNSZone>, ctx: Arc<Data>) -> Result<Action, k
         .await?;
     };
 
-    rotate_zone_serial(zone, ctx.client.clone()).await?;
+    update_zone_hash(zone, ctx.client.clone()).await?;
     Ok(Action::requeue(Duration::from_secs(30)))
 }
 
@@ -271,6 +271,11 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
             .collect();
 
         // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
+        //
+        // Reversing the fqdns sorts by domain suffix.
+        // 
+        // Reversing the order puts the longer domains first, letting us use `Iterator::find`
+        // to get the longest matching suffix.
         all_zones.sort_by(|a, b| {
             b.0.chars()
                 .rev()
@@ -278,6 +283,7 @@ async fn reconcile_records(record: Arc<DNSRecord>, ctx: Arc<Data>) -> Result<Act
                 .cmp(&a.0.chars().rev().collect())
         });
 
+        // Find the longest parent zone which is a suffix of our fqdn.
         let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(fqdn, zone)| {
              if record.spec.name.ends_with(&fqdn) {
                 Some(zone)
