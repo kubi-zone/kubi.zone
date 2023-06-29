@@ -5,4 +5,5 @@ members = [
     "kubizone",
     "kubizone-zonefile-crds",
     "kubizone-zonefile",
+    "crd-dumper"
 ]

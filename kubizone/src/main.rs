@@ -1,9 +1,9 @@
-use kubizone_crds::{Record, Zone};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use kube::{
     api::{DeleteParams, PostParams},
     Api, Client, CustomResourceExt,
 };
+use kubizone_crds::{Record, Zone};
 
 mod reconciliation;
 

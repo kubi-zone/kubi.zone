@@ -8,12 +8,12 @@ use std::{
 };
 use tokio::select;
 
-use kubizone_crds::{Record, Zone, PARENT_ZONE_LABEL};
 use kube::{
     api::{ListParams, Patch, PatchParams},
     runtime::{controller::Action, watcher, Controller},
     Api, Client, ResourceExt,
 };
+use kubizone_crds::{Record, Zone, PARENT_ZONE_LABEL};
 use tracing::log::*;
 
 struct Data {

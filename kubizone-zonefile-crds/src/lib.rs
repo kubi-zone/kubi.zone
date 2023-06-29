@@ -1,5 +1,5 @@
-use kubizone_crds::ZoneRef;
 use kube::{CustomResource, ResourceExt};
+use kubizone_crds::ZoneRef;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -13,19 +13,19 @@ pub mod defaults {
     pub const SERIAL: u32 = 1;
 
     /// Recommendation for small and stable zones[^1]: 7200 seconds (2 hours).
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     pub const RETRY: u32 = 7200;
 
     /// Recommendation for small and stable zones[^1]: 3600000 seconds (1000 hours).
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     pub const EXPIRE: u32 = 3600000;
 
     /// Recommendation for small and stable zones[^1]: 172800 seconds (2 days),
     /// but we select a much lower value to increase cache responsiveness
     /// and reduce failed lookups to records still being provisioned.
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     pub const NEGATIVE_RESPONSE_CACHE: u32 = 360;
 
@@ -54,7 +54,7 @@ pub mod defaults {
 
 /// Label attached to [`Zone`](kubizone_crds::Zone)s as backreferences
 /// to a single downstream [`ZoneFile`] generated from it.
-/// 
+///
 /// Used by the controller to trigger reconciliation when upstream
 /// zones change.
 pub const TARGET_ZONEFILE_LABEL: &str = "kubi.zone/zonefile";
@@ -84,7 +84,7 @@ pub struct ZoneFileSpec {
     pub ttl: u32,
 
     /// Serial of the latest generated zonefile.
-    /// 
+    ///
     /// The zonefile controller will automatically increment this value
     /// whenever the zonefile configmap is rebuilt, in accordance with
     /// [RFC 1912](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2)
@@ -93,32 +93,32 @@ pub struct ZoneFileSpec {
 
     /// Number of seconds after which secondary name servers should
     /// query the master for the SOA record, to detect zone changes.
-    /// 
+    ///
     /// Recommendation for small and stable zones[^1]: 86400 seconds (24 hours).
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     #[serde(default = "defaults::refresh")]
     pub refresh: u32,
 
     /// Number of seconds after which secondary name servers should
-    /// retry to request the serial number from the master if the 
+    /// retry to request the serial number from the master if the
     /// master does not respond.
-    /// 
+    ///
     /// It must be less than Refresh.
-    /// 
+    ///
     /// Recommendation for small and stable zones[^1]: 7200 seconds (2 hours).
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     #[serde(default = "defaults::retry")]
     pub retry: u32,
 
     /// Number of seconds after which secondary name servers should
     /// stop answering request for this zone if the master does not respond.
-    /// 
+    ///
     /// This value must be bigger than the sum of Refresh and Retry.
-    /// 
+    ///
     /// Recommendation for small and stable zones[^1]: 3600000 seconds (1000 hours)
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     #[serde(default = "defaults::expire")]
     pub expire: u32,
@@ -126,12 +126,12 @@ pub struct ZoneFileSpec {
     /// Used in calculating the time to live for purposes of negative caching.
     /// Authoritative name servers take the smaller of the SOA TTL and the
     /// SOA MINIMUM to send as the SOA TTL in negative responses.
-    /// 
+    ///
     /// Resolvers use the resulting SOA TTL to understand for how long they
-    /// are allowed to cache a negative response. 
-    /// 
+    /// are allowed to cache a negative response.
+    ///
     /// Recommendation for small and stable zones[^1] 172800 seconds (2 days)
-    /// 
+    ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     #[serde(default = "defaults::negative_response_cache")]
     pub negative_response_cache: u32,
@@ -160,7 +160,7 @@ impl ZoneFile {
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 pub struct ZoneFileStatus {
     /// Last observed hash of the upstream [`Zone`](kubizone_crds::Zone)
-    /// 
+    ///
     /// Used by the zonefile controller to trigger configmap rebuilds
     /// and zone serial rotation.
     pub hash: Option<String>,

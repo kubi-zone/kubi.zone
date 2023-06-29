@@ -44,12 +44,7 @@ mod defaults {
     PartialOrd,
     Ord,
 )]
-#[kube(
-    group = "kubi.zone",
-    version = "v1alpha1",
-    kind = "Zone",
-    namespaced
-)]
+#[kube(group = "kubi.zone", version = "v1alpha1", kind = "Zone", namespaced)]
 #[kube(status = "ZoneStatus")]
 #[kube(printcolumn = r#"{"name":"name", "jsonPath": ".spec.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
@@ -92,12 +87,7 @@ pub struct ZoneStatus {
     PartialOrd,
     Ord,
 )]
-#[kube(
-    group = "kubi.zone",
-    version = "v1alpha1",
-    kind = "Record",
-    namespaced
-)]
+#[kube(group = "kubi.zone", version = "v1alpha1", kind = "Record", namespaced)]
 #[kube(status = "RecordStatus")]
 #[kube(printcolumn = r#"{"name":"name", "jsonPath": ".spec.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"class", "jsonPath": ".spec.class", "type": "string"}"#)]
@@ -139,18 +129,5 @@ impl Display for ZoneRef {
         } else {
             f.write_str(&self.name)
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use kube::CustomResourceExt;
-
-    use crate::{Record, Zone};
-
-    #[test]
-    fn dump_crds() {
-        println!("---{}", serde_yaml::to_string(&Zone::crd()).unwrap());
-        println!("---{}", serde_yaml::to_string(&Record::crd()).unwrap());
     }
 }

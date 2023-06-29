@@ -1,6 +1,6 @@
+use futures::StreamExt;
 use kubizone_crds::{Record, RecordSpec, Zone};
 use kubizone_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
-use futures::StreamExt;
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
 use kube::{
@@ -26,11 +26,7 @@ async fn build_zonefile(
     zonefile: &ZoneFile,
     origin: &str,
 ) -> Result<String, kube::Error> {
-
-    let label = format!(
-        "{PARENT_ZONE_LABEL}={}",
-        zonefile.zone_ref().to_string()
-    );
+    let label = format!("{PARENT_ZONE_LABEL}={}", zonefile.zone_ref().to_string());
     debug!("generating zone by finding records matching {label}");
     let zone_ref = ListParams::default().labels(&label);
 
