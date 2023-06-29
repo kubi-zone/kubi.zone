@@ -19,6 +19,8 @@ struct Data {
 pub const CONTROLLER_NAME: &str = "dnsetes.pius.dev/zonefile";
 use dnsetes_crds::PARENT_ZONE_LABEL;
 
+/// Builds the actual [zone file](https://datatracker.ietf.org/doc/html/rfc1035#section-5)
+/// based on [`Record`]s and [`Zone`]s pointing to the [`Zone`] referenced by [`ZoneFile`].
 async fn build_zonefile(
     client: Client,
     zonefile: &ZoneFile,
@@ -32,16 +34,8 @@ async fn build_zonefile(
     debug!("generating zone by finding records matching {label}");
     let zone_ref = ListParams::default().labels(&label);
 
-    // Get a hash of the collective child zones and records and use
-    // as the basis for detecting change.
-    /*
-       let child_zones: Vec<_> = Api::<Zone>::all(client.clone())
-           .list(&zone_ref)
-           .await?
-           .into_iter()
-           .map(|zone| zone.spec)
-           .collect();
-    */
+    // TODO: Implement sub-zone building, by either listing namservers
+    // (if any), or including the zone's records directly.
 
     let origin_suffix = &format!(".{origin}");
 

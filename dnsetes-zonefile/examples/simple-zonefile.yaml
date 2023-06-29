@@ -1,3 +1,4 @@
+# Apply this document and `kubectl edit` the records to see hashes and serials update.
 ---
 apiVersion: dnsetes.pius.dev/v1alpha1
 kind: Zone
