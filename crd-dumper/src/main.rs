@@ -8,7 +8,6 @@ where
     C: Resource<DynamicType = ()> + CustomResourceExt,
 {
     let directory = path
-        .join(C::group(&()).as_ref())
         .join(C::api_version(&()).as_ref());
 
     std::fs::create_dir_all(&directory)?;
