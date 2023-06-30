@@ -1,5 +1,10 @@
+#!/usr/bin/env just
+
 kubizone_version := `cat kubizone/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
 zonefile_version := `cat kubizone-zonefile/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
+
+default:
+    just --list
 
 docker-build-kubizone:    
     docker build --target kubizone -t ghcr.io/mathiaspius/kubizone/kubizone:dev .
