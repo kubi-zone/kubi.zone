@@ -14,8 +14,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.name
-      name: name
+    - jsonPath: .spec.domainName
+      name: domain name
       type: string
     - jsonPath: .spec.class
       name: class
@@ -29,7 +29,7 @@ spec:
     - jsonPath: .status.fqdn
       name: fqdn
       type: string
-    - jsonPath: .metadata.labels.kube\.zone/parent-zone
+    - jsonPath: .metadata.labels.kubi\.zone/parent-zone
       name: parent
       type: string
     name: v1alpha1
@@ -42,7 +42,7 @@ spec:
               class:
                 default: IN
                 type: string
-              name:
+              domainName:
                 type: string
               rdata:
                 type: string
@@ -65,7 +65,7 @@ spec:
                 - name
                 type: object
             required:
-            - name
+            - domainName
             - rdata
             - type
             type: object

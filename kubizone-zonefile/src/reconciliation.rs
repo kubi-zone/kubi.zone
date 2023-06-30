@@ -41,7 +41,7 @@ async fn build_zonefile(
         .into_iter()
         .map(|record| {
             let RecordSpec {
-                name,
+                domain_name: name,
                 type_,
                 class,
                 ttl,
@@ -172,7 +172,7 @@ async fn reconcile_zonefiles(
             },
             data: Some(BTreeMap::from([(
                 "zonefile".to_string(),
-                build_zonefile(ctx.client.clone(), &zonefile, &zone.spec.name).await?,
+                build_zonefile(ctx.client.clone(), &zonefile, &zone.spec.domain_name).await?,
             )])),
             ..Default::default()
         };

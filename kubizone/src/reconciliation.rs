@@ -193,8 +193,8 @@ async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::E
 
 async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the zone
-    if zone.spec.name.ends_with('.') {
-        set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.name).await?;
+    if zone.spec.domain_name.ends_with('.') {
+        set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.domain_name).await?;
     } else {
         let Some(zone_ref) = zone.spec.zone_ref.as_ref() else {
             warn!("zone {} does not have a fully qualified domain name, nor does it reference a zone.", zone.name_any());
@@ -224,7 +224,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
             return Ok(Action::requeue(Duration::from_secs(5)));
         };
 
-        let fqdn = format!("{}.{}", zone.spec.name, parent_fqdn);
+        let fqdn = format!("{}.{}", zone.spec.domain_name, parent_fqdn);
 
         set_zone_fqdn(ctx.client.clone(), &zone, &fqdn).await?;
 
@@ -242,8 +242,8 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
 
 async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the record
-    if record.spec.name.ends_with('.') {
-        set_record_fqdn(ctx.client.clone(), &record, &record.spec.name).await?;
+    if record.spec.domain_name.ends_with('.') {
+        set_record_fqdn(ctx.client.clone(), &record, &record.spec.domain_name).await?;
 
         // Retrieve all zones with a defined fqdn.
         let mut all_zones: Vec<_> = Api::<Zone>::all(ctx.client.clone())
@@ -273,13 +273,13 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
 
         // Find the longest parent zone which is a suffix of our fqdn.
         let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(fqdn, zone)| {
-             if record.spec.name.ends_with(&fqdn) {
+             if record.spec.domain_name.ends_with(&fqdn) {
                 Some(zone)
             } else {
                 None
             }
         }) else {
-            warn!("record {} ({}) does not fit into any found Zone", record.name_any(), &record.spec.name);
+            warn!("record {} ({}) does not fit into any found Zone", record.name_any(), &record.spec.domain_name);
             return Ok(Action::requeue(Duration::from_secs(30)))
         };
 
@@ -318,7 +318,7 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
             return Ok(Action::requeue(Duration::from_secs(5)));
         };
 
-        let fqdn = format!("{}.{}", record.spec.name, parent_fqdn);
+        let fqdn = format!("{}.{}", record.spec.domain_name, parent_fqdn);
 
         set_record_fqdn(ctx.client.clone(), &record, &fqdn).await?;
         set_record_parent_ref(
