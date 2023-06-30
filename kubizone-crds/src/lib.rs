@@ -50,7 +50,7 @@ mod defaults {
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
 #[kube(
-    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kubizone\\.pius\\.dev/parent-zone", "type": "string"}"#
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kube\\.zone/parent-zone", "type": "string"}"#
 )]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneSpec {
@@ -95,7 +95,7 @@ pub struct ZoneStatus {
 #[kube(printcolumn = r#"{"name":"data", "jsonPath": ".spec.rdata", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
 #[kube(
-    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kubizone\\.pius\\.dev/parent-zone", "type": "string"}"#
+    printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kube\\.zone/parent-zone", "type": "string"}"#
 )]
 #[serde(rename_all = "camelCase")]
 pub struct RecordSpec {

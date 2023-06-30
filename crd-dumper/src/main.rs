@@ -8,8 +8,7 @@ fn dump_crd<C>(path: &Path) -> Result<(), std::io::Error>
 where
     C: Resource<DynamicType = ()> + CustomResourceExt,
 {
-    let directory = path
-        .join(C::api_version(&()).as_ref());
+    let directory = path.join(C::api_version(&()).as_ref());
 
     std::fs::create_dir_all(&directory)?;
 

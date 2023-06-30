@@ -23,7 +23,7 @@ spec:
     - jsonPath: .status.hash
       name: hash
       type: string
-    - jsonPath: .metadata.labels.kubizone\.pius\.dev/parent-zone
+    - jsonPath: .metadata.labels.kube\.zone/parent-zone
       name: parent
       type: string
     name: v1alpha1
