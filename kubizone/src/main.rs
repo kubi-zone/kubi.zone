@@ -2,10 +2,7 @@ use std::path::PathBuf;
 
 use clap::{command, Parser, Subcommand};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
-use kube::{
-    api::{DeleteParams, PostParams},
-    Api, Client, CustomResourceExt,
-};
+use kube::{Api, Client};
 use kubizone_crds::{Record, Zone};
 use tracing::log::warn;
 
@@ -54,24 +51,4 @@ async fn main() {
             reconciliation::reconcile(client).await;
         }
     }
-
-    let client = Client::try_default().await.unwrap();
-
-    let crds: Api<CustomResourceDefinition> = Api::all(client.clone());
-
-    crds.delete(Record::crd_name(), &DeleteParams::default())
-        .await
-        .ok();
-    crds.delete(Zone::crd_name(), &DeleteParams::default())
-        .await
-        .ok();
-
-    crds.create(&PostParams::default(), &Record::crd())
-        .await
-        .unwrap();
-    crds.create(&PostParams::default(), &Zone::crd())
-        .await
-        .unwrap();
-
-    reconciliation::reconcile(client).await;
 }

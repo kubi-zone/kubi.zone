@@ -23,11 +23,11 @@ struct Data {
 pub const CONTROLLER_NAME: &str = "kubi.zone/zone-resolver";
 
 async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), kube::Error> {
-    if !zone
+    if zone
         .status
         .as_ref()
-        .and_then(|status| status.fqdn.as_ref())
-        .is_some_and(|current_fqdn| current_fqdn == fqdn)
+        .and_then(|status| status.fqdn.as_deref())
+        != Some(fqdn)
     {
         info!("updating fqdn for zone {} to {}", zone.name_any(), fqdn);
         Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
@@ -51,11 +51,7 @@ async fn set_zone_parent_ref(
     zone: &Arc<Zone>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
-    if !zone
-        .labels()
-        .get(PARENT_ZONE_LABEL)
-        .is_some_and(|current_parent| current_parent == &parent_ref)
-    {
+    if zone.labels().get(PARENT_ZONE_LABEL).as_deref() != Some(&parent_ref) {
         info!(
             "updating zone {}'s {PARENT_ZONE_LABEL} to {parent_ref}",
             zone.name_any()
@@ -84,11 +80,11 @@ async fn set_zone_parent_ref(
 }
 
 async fn set_record_fqdn(client: Client, record: &Record, fqdn: &str) -> Result<(), kube::Error> {
-    if !record
+    if record
         .status
         .as_ref()
-        .and_then(|status| status.fqdn.as_ref())
-        .is_some_and(|current_fqdn| current_fqdn == fqdn)
+        .and_then(|status| status.fqdn.as_deref())
+        != Some(fqdn)
     {
         info!("updating fqdn for record {} to {}", record.name_any(), fqdn);
         Api::<Record>::namespaced(client, record.namespace().as_ref().unwrap())
@@ -113,11 +109,7 @@ async fn set_record_parent_ref(
     record: &Arc<Record>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
-    if !record
-        .labels()
-        .get(PARENT_ZONE_LABEL)
-        .is_some_and(|current_parent| current_parent == &parent_ref)
-    {
+    if record.labels().get(PARENT_ZONE_LABEL) != Some(&parent_ref) {
         info!(
             "updating record {}'s {PARENT_ZONE_LABEL} to {parent_ref}",
             record.name_any()
