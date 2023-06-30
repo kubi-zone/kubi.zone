@@ -34,15 +34,59 @@ async fn build_zonefile(
     // TODO: Implement sub-zone building, by either listing namservers
     // (if any), or including the zone's records directly.
 
+    // Suffix of the origin, with a '.' in front.
+    // We remove suffixes matching this from all records in order to
+    // simplify the output zonefiles, as the origin is assumed.
     let origin_suffix = &format!(".{origin}");
 
-    let records = Api::<Record>::all(client.clone())
+    // Transform the record FQDNs into zone-dependent domain names,
+    // without the .origin suffix (see above).
+    //
+    // For example, in the zone "example.org.", the following
+    // transformations will take place:
+    //   www.example.org. => www
+    //   ftp.users.example.org. => ftp.users
+    let mut records: Vec<_> = Api::<Record>::all(client.clone())
         .list(&zone_ref)
         .await?
         .into_iter()
         .map(|record| {
+            let shortened_name = record
+                .spec
+                .domain_name
+                .strip_suffix(origin_suffix)
+                .unwrap_or(&record.spec.domain_name)
+                .to_string();
+
+            (shortened_name, record)
+        })
+        .collect();
+
+    // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
+    //
+    // Reversing the fqdns sorts by domain suffix.
+    //
+    // Reversing the order puts the longer domains first, letting us use `Iterator::find`
+    // to get the longest matching suffix.
+    records.sort_by(|(a, _), (b, _)| {
+        b.chars()
+            .rev()
+            .collect::<Vec<_>>()
+            .cmp(&a.chars().rev().collect())
+    });
+
+    // We use the longest domain name in the list for
+    // aligning the text in the output zonefile
+    let longest_name = records
+        .iter()
+        .map(|(name, _)| name.len())
+        .max()
+        .unwrap_or_default();
+
+    let serialized_records = records
+        .into_iter()
+        .map(|(name, record)| {
             let RecordSpec {
-                domain_name: name,
                 type_,
                 class,
                 ttl,
@@ -50,10 +94,9 @@ async fn build_zonefile(
                 ..
             } = record.spec;
 
-            let shortened_name = name.strip_suffix(origin_suffix).unwrap_or(&name);
-
             format!(
-                "{shortened_name} {ttl} {class} {type_} {rdata}",
+                "{name:>width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
+                width = longest_name,
                 ttl = ttl.unwrap_or(zonefile.spec.ttl)
             )
         })
@@ -79,7 +122,7 @@ async fn build_zonefile(
             {negative_response_cache}
         )
 
-        {records}
+        {serialized_records}
     "};
 
     Ok(zone)
@@ -185,7 +228,13 @@ async fn reconcile_zonefiles(
             },
             data: Some(BTreeMap::from([(
                 "zonefile".to_string(),
-                build_zonefile(ctx.client.clone(), &zonefile, &zone.spec.domain_name, next_serial).await?,
+                build_zonefile(
+                    ctx.client.clone(),
+                    &zonefile,
+                    &zone.spec.domain_name,
+                    next_serial,
+                )
+                .await?,
             )])),
             ..Default::default()
         };

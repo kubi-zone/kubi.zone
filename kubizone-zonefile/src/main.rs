@@ -18,10 +18,12 @@ struct Args {
 #[derive(Debug, Subcommand)]
 enum Command {
     PrintCrds,
-    DumpCrds { path: PathBuf },
-    Reconcile { 
+    DumpCrds {
+        path: PathBuf,
+    },
+    Reconcile {
         #[clap(long)]
-        danger_recreate_crds: bool 
+        danger_recreate_crds: bool,
     },
 }
 

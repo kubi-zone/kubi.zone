@@ -51,7 +51,7 @@ async fn set_zone_parent_ref(
     zone: &Arc<Zone>,
     parent_ref: String,
 ) -> Result<(), kube::Error> {
-    if zone.labels().get(PARENT_ZONE_LABEL).as_deref() != Some(&parent_ref) {
+    if zone.labels().get(PARENT_ZONE_LABEL) != Some(&parent_ref) {
         info!(
             "updating zone {}'s {PARENT_ZONE_LABEL} to {parent_ref}",
             zone.name_any()
@@ -264,11 +264,11 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
         //
         // Reversing the order puts the longer domains first, letting us use `Iterator::find`
         // to get the longest matching suffix.
-        all_zones.sort_by(|a, b| {
-            b.0.chars()
+        all_zones.sort_by(|(a, _), (b, _)| {
+            b.chars()
                 .rev()
                 .collect::<Vec<_>>()
-                .cmp(&a.0.chars().rev().collect())
+                .cmp(&a.chars().rev().collect())
         });
 
         // Find the longest parent zone which is a suffix of our fqdn.
