@@ -19,7 +19,10 @@ struct Args {
 enum Command {
     PrintCrds,
     DumpCrds { path: PathBuf },
-    Reconcile { danger_recreate_crds: bool },
+    Reconcile { 
+        #[clap(long)]
+        danger_recreate_crds: bool 
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]

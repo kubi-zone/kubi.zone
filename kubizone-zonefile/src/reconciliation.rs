@@ -25,6 +25,7 @@ async fn build_zonefile(
     client: Client,
     zonefile: &ZoneFile,
     origin: &str,
+    serial: u32,
 ) -> Result<String, kube::Error> {
     let label = format!("{PARENT_ZONE_LABEL}={}", zonefile.zone_ref().to_string());
     debug!("generating zone by finding records matching {label}");
@@ -60,7 +61,6 @@ async fn build_zonefile(
         .join("\n");
 
     let ZoneFileSpec {
-        serial,
         refresh,
         retry,
         expire,
@@ -161,30 +161,6 @@ async fn reconcile_zonefiles(
             zonefile.name_any(),
         );
 
-        let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
-
-        let config_map = ConfigMap {
-            metadata: ObjectMeta {
-                name: Some(zonefile.name_any()),
-                namespace: zonefile.namespace(),
-                owner_references: Some(vec![owner_reference]),
-                ..ObjectMeta::default()
-            },
-            data: Some(BTreeMap::from([(
-                "zonefile".to_string(),
-                build_zonefile(ctx.client.clone(), &zonefile, &zone.spec.domain_name).await?,
-            )])),
-            ..Default::default()
-        };
-
-        Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
-            .patch(
-                &zonefile.name_any(),
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Apply(config_map),
-            )
-            .await?;
-
         // Compute a serial based on the current datetime in UTC as per:
         // https://datatracker.ietf.org/doc/html/rfc1912#section-2.2
         let now = time::OffsetDateTime::now_utc();
@@ -197,6 +173,30 @@ async fn reconcile_zonefiles(
         // If it's a new day, use YYYYMMDD00, otherwise just use the increment
         // of the old serial.
         let next_serial = std::cmp::max(now_serial, zonefile.spec.serial + 1);
+
+        let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
+
+        let config_map = ConfigMap {
+            metadata: ObjectMeta {
+                name: Some(zonefile.name_any()),
+                namespace: zonefile.namespace(),
+                owner_references: Some(vec![owner_reference]),
+                ..ObjectMeta::default()
+            },
+            data: Some(BTreeMap::from([(
+                "zonefile".to_string(),
+                build_zonefile(ctx.client.clone(), &zonefile, &zone.spec.domain_name, next_serial).await?,
+            )])),
+            ..Default::default()
+        };
+
+        Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
+            .patch(
+                &zonefile.name_any(),
+                &PatchParams::apply(CONTROLLER_NAME),
+                &Patch::Apply(config_map),
+            )
+            .await?;
 
         info!(
             "updating zone {}'s serial (before: {}, now: {next_serial})",
