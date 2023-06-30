@@ -32,11 +32,11 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry         \
 
 FROM scratch AS kubizone
 LABEL org.opencontainers.image.source=https://github.com/MathiasPius/kubizone
-ARG UID
-ARG GID
+ARG UID=65203
+ARG GID=65203
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/passwd /etc/passwd
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/group /etc/group
-COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone /kubizone/
+COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone /kubizone/kubizone
 USER ${UID}:${GID}
 
 ENTRYPOINT ["/kubizone/kubizone"]
@@ -44,8 +44,8 @@ CMD ["print-crds"]
 
 FROM scratch AS zonefile
 LABEL org.opencontainers.image.source=https://github.com/MathiasPius/kubizone
-ARG UID
-ARG GID
+ARG UID=65203
+ARG GID=65203
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/passwd /etc/passwd
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/group /etc/group
 COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone-zonefile /kubizone/zonefile
