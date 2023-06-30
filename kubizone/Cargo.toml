@@ -6,10 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Utilities
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+
+# Kubernetes
 kubizone-crds = { path = "../kubizone-crds" }
 kube = { version = "0.83.0", default-features = false, features = ["derive", "rustls-tls", "client", "runtime"] }
 k8s-openapi = { version = "0.18.0", features = ["v1_25"] }
-tracing = "0.1.37"
-tracing-subscriber = "0.3.17"
-tokio = { version = "1.28.2", features = ["macros", "rt"] }
-futures = "0.3.17"
+
+# Async
+tokio = { version = "1.29.1", features = ["macros", "rt"] }
+futures = "0.3.28"
+
+# CLI
+clap = { version = "4.3.10", features = ["derive"] }
+kubizone-crd-utils = { path = "../kubizone-crd-utils" }
