@@ -14,4 +14,9 @@ docker-publish: docker-build
     docker push ghcr.io/mathiaspius/kubizone/zonefile:dev
 
 helm-install:
-    helm upgrade --install --set image.tag=dev kubizone ./charts/kubizone
+    helm upgrade --install              \
+        --set image.tag=dev             \
+        --set image.pullPolicy=Always   \
+        kubizone ./charts/kubizone
+    
+    watch kubectl get pods
