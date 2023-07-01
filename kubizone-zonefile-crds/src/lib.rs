@@ -1,4 +1,4 @@
-use kube::{CustomResource, ResourceExt, runtime::reflector::ObjectRef};
+use kube::{CustomResource, ResourceExt};
 use kubizone_crds::ZoneRef;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
