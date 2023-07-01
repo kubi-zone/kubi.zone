@@ -172,6 +172,7 @@ impl ZoneFile {
 /// the upstream [`Zone`](kubizone_crds::Zone), to determine when the
 /// output `ConfigMap` should be re-generated.
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ZoneFileStatus {
     /// Last observed hash of the upstream [`Zone`](kubizone_crds::Zone)
     ///
