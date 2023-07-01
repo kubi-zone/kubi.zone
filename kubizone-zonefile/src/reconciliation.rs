@@ -219,9 +219,11 @@ async fn reconcile_zonefiles(
 
         let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
 
+        let configmap_name = format!("{}-{next_serial}", zonefile.name_any());
+
         let config_map = ConfigMap {
             metadata: ObjectMeta {
-                name: Some(zonefile.name_any()),
+                name: Some(configmap_name.clone()),
                 namespace: zonefile.namespace(),
                 owner_references: Some(vec![owner_reference]),
                 ..ObjectMeta::default()
@@ -279,6 +281,7 @@ async fn reconcile_zonefiles(
                 &Patch::Merge(json!({
                     "status": {
                         "hash": zone_hash,
+                        "configMap": configmap_name
                     },
                 })),
             )

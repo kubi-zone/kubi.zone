@@ -1,4 +1,4 @@
-use kube::{CustomResource, ResourceExt};
+use kube::{CustomResource, ResourceExt, runtime::reflector::ObjectRef};
 use kubizone_crds::ZoneRef;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,9 @@ pub mod defaults {
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     pub const NEGATIVE_RESPONSE_CACHE: u32 = 360;
 
+    /// Number of zonefile ConfigMaps to keep around.
+    pub const HISTORY: u32 = 10;
+
     // The functions below are only there for use with `serde(default)`.
     pub(super) const fn refresh() -> u32 {
         REFRESH
@@ -49,6 +52,10 @@ pub mod defaults {
 
     pub(super) const fn negative_response_cache() -> u32 {
         NEGATIVE_RESPONSE_CACHE
+    }
+
+    pub(super) const fn history() -> u32 {
+        HISTORY
     }
 }
 
@@ -77,6 +84,13 @@ pub const TARGET_ZONEFILE_LABEL: &str = "kubi.zone/zonefile";
 pub struct ZoneFileSpec {
     /// Reference to a [`Zone`](kubizone_crds::Zone), optionally in a different namespace.
     pub zone_ref: ZoneRef,
+
+    /// Number of zonefile revisions to keep around in the form of ConfigMaps.
+    /// 
+    /// If more than N ConfigMaps exist, which are descendents of this ZoneFile,
+    /// then delete the oldest (lowest revision) ones, until N <= history.
+    #[serde(default = "defaults::history")]
+    pub history: u32,
 
     /// Time-to-Live. Represents how long (in seconds) recursive resolvers should
     /// keep this record in their cache.
@@ -164,4 +178,7 @@ pub struct ZoneFileStatus {
     /// Used by the zonefile controller to trigger configmap rebuilds
     /// and zone serial rotation.
     pub hash: Option<String>,
+
+    /// .metadata.name of the latest generated configmap
+    pub config_map: Option<String>,
 }
