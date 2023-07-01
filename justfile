@@ -25,3 +25,7 @@ helm-install:
         kubizone ./charts/kubizone
     
     watch kubectl get pods
+
+update-crds:
+    cargo run --bin kubizone-zonefile -- dump-crds crds
+    cargo run --bin kubizone -- dump-crds crds
