@@ -18,27 +18,32 @@ docker-publish: docker-build
     docker push ghcr.io/mathiaspius/kubizone/kubizone:dev
     docker push ghcr.io/mathiaspius/kubizone/zonefile:dev
 
-helm-install:
-    helm upgrade --install              \
+helm-install-kubizone:
+    helm -n kubizone upgrade --install  \
         --set image.tag=dev             \
         --set image.pullPolicy=Always   \
         kubizone ./charts/kubizone
 
-    helm upgrade --install              \
+helm-install-zonefile:
+    helm -n kubizone upgrade --install  \
         --set image.tag=dev             \
         --set image.pullPolicy=Always   \
         zonefile ./charts/zonefile
 
-    kubectl get pods -o name | grep kubizone | xargs -n1 kubectl delete
+helm-install-zonefile-coredns:
+    helm -n kubizone upgrade --install              \
+        --set zonefile.image.tag=dev                \
+        --set zonefile.image.pullPolicy=Always      \
+        zonefile-coredns ./charts/zonefile-coredns
 
 dump-crds:
     cargo run --bin kubizone-zonefile -- dump-crds crds
     cargo run --bin kubizone -- dump-crds crds
 
-
 danger-recreate-crds:
     cargo run --bin kubizone-zonefile -- danger-recreate-crds
     cargo run --bin kubizone -- danger-recreate-crds
 
-danger-test: danger-recreate-crds docker-publish helm-install
-    kubectl apply -f kubizone-zonefile/examples/simple-zonefile.yaml
+danger-test: danger-recreate-crds docker-publish helm-install-kubizone helm-install-zonefile
+    kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
+    kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl delete
