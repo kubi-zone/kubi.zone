@@ -123,7 +123,7 @@ spec:
             description: Describes the current state of the [`ZoneFile`], tracks state of the upstream [`Zone`](kubizone_crds::Zone), to determine when the output `ConfigMap` should be re-generated.
             nullable: true
             properties:
-              config_map:
+              configMap:
                 description: .metadata.name of the latest generated configmap
                 nullable: true
                 type: string
