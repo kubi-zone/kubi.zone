@@ -86,7 +86,7 @@ pub struct ZoneFileSpec {
     pub zone_ref: ZoneRef,
 
     /// Number of zonefile revisions to keep around in the form of ConfigMaps.
-    /// 
+    ///
     /// If more than N ConfigMaps exist, which are descendents of this ZoneFile,
     /// then delete the oldest (lowest revision) ones, until N <= history.
     #[serde(default = "defaults::history")]

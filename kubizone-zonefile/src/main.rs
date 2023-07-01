@@ -21,6 +21,7 @@ enum Command {
     DumpCrds {
         path: PathBuf,
     },
+    DangerRecreateCrds,
     Reconcile {
         #[clap(long)]
         danger_recreate_crds: bool,
@@ -42,6 +43,13 @@ async fn main() {
         }
         Command::DumpCrds { path } => {
             kubizone_crd_utils::write_to_path::<ZoneFile>(&path).unwrap();
+        }
+        Command::DangerRecreateCrds => {
+            let client = Client::try_default().await.unwrap();
+
+            warn!("action danger-recreate-crds chosen, deleting ZoneFile CRDs from cluster, and recreating. This will delete all existing ZoneFiles!");
+            let api: Api<CustomResourceDefinition> = Api::all(client.clone());
+            kubizone_crd_utils::recreate_crd_destructively::<ZoneFile>(api).await;
         }
         Command::Reconcile {
             danger_recreate_crds,

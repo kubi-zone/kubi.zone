@@ -23,9 +23,22 @@ helm-install:
         --set image.tag=dev             \
         --set image.pullPolicy=Always   \
         kubizone ./charts/kubizone
-    
-    watch kubectl get pods
 
-update-crds:
+    helm upgrade --install              \
+        --set image.tag=dev             \
+        --set image.pullPolicy=Always   \
+        zonefile ./charts/zonefile
+
+    kubectl get pods -o name | grep kubizone | xargs -n1 kubectl delete
+
+dump-crds:
     cargo run --bin kubizone-zonefile -- dump-crds crds
     cargo run --bin kubizone -- dump-crds crds
+
+
+danger-recreate-crds:
+    cargo run --bin kubizone-zonefile -- danger-recreate-crds
+    cargo run --bin kubizone -- danger-recreate-crds
+
+danger-test: danger-recreate-crds docker-publish helm-install
+    kubectl apply -f kubizone-zonefile/examples/simple-zonefile.yaml

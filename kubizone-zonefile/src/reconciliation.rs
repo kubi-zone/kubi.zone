@@ -243,7 +243,7 @@ async fn reconcile_zonefiles(
 
         Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
             .patch(
-                &zonefile.name_any(),
+                &configmap_name,
                 &PatchParams::apply(CONTROLLER_NAME),
                 &Patch::Apply(config_map),
             )
