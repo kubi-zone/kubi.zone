@@ -301,6 +301,7 @@ fn zonefile_error_policy(zone: Arc<ZoneFile>, error: &kube::Error, _ctx: Arc<Dat
 
 pub async fn reconcile(client: Client) {
     let zonefiles = Api::<ZoneFile>::all(client.clone());
+    let configmaps = Api::<ConfigMap>::all(client.clone());
 
     let zone_controller = Controller::new(zonefiles, watcher::Config::default())
         .watches(
@@ -308,6 +309,7 @@ pub async fn reconcile(client: Client) {
             watcher::Config::default(),
             kubizone_crds::watch_reference(TARGET_ZONEFILE_LABEL),
         )
+        .owns(configmaps, watcher::Config::default())
         .shutdown_on_signal()
         .run(
             reconcile_zonefiles,
