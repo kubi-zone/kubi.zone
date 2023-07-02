@@ -95,7 +95,7 @@ async fn build_zonefile(
             } = record.spec;
 
             format!(
-                "{name:>width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
+                "{name:<width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
                 width = longest_name,
                 ttl = ttl.unwrap_or(zonefile.spec.ttl)
             )

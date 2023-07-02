@@ -34,6 +34,7 @@ helm-install-zonefile-coredns:
     helm -n kubizone upgrade --install              \
         --set zonefile.image.tag=dev                \
         --set zonefile.image.pullPolicy=Always      \
+        --set "zonefiles={example}"                 \
         zonefile-coredns ./charts/zonefile-coredns
 
 dump-crds:

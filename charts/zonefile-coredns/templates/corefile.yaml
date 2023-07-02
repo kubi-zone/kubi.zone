@@ -12,7 +12,7 @@ data:
             lameduck 5s
         }
         ready
-        {{- range .Values.zones }}
+        {{- range .Values.zonefiles }}
         file /zonefiles/{{ . }}
         {{- end }}
         cache
