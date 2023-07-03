@@ -198,7 +198,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
     } else {
         let Some(zone_ref) = zone.spec.zone_ref.as_ref() else {
             warn!("zone {} does not have a fully qualified domain name, nor does it reference a zone.", zone.name_any());
-            return Ok(Action::requeue(Duration::from_secs(300)))
+            return Ok(Action::requeue(Duration::from_secs(300)));
         };
         let parent_zone = Api::<Zone>::namespaced(
             ctx.client.clone(),
@@ -273,14 +273,18 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
 
         // Find the longest parent zone which is a suffix of our fqdn.
         let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(fqdn, zone)| {
-             if record.spec.domain_name.ends_with(&fqdn) {
+            if record.spec.domain_name.ends_with(&fqdn) {
                 Some(zone)
             } else {
                 None
             }
         }) else {
-            warn!("record {} ({}) does not fit into any found Zone", record.name_any(), &record.spec.domain_name);
-            return Ok(Action::requeue(Duration::from_secs(30)))
+            warn!(
+                "record {} ({}) does not fit into any found Zone",
+                record.name_any(),
+                &record.spec.domain_name
+            );
+            return Ok(Action::requeue(Duration::from_secs(30)));
         };
 
         set_record_parent_ref(
@@ -292,7 +296,7 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
     } else {
         let Some(zone_ref) = record.spec.zone_ref.as_ref() else {
             warn!("record {} does not have a fully qualified domain name, nor does it reference a zone.", record.name_any());
-            return Ok(Action::requeue(Duration::from_secs(300)))
+            return Ok(Action::requeue(Duration::from_secs(300)));
         };
         let parent_zone = Api::<Zone>::namespaced(
             ctx.client.clone(),

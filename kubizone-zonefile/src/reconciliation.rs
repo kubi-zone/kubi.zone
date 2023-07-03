@@ -188,8 +188,11 @@ async fn reconcile_zonefiles(
     apply_zonefile_backref(ctx.client.clone(), &zonefile, &zone).await?;
 
     let Some(zone_hash) = zone.status.as_ref().and_then(|zone| zone.hash.as_ref()) else {
-        debug!("zone {} has not yet computed its hash, requeuing", zone.name_any());
-        return Ok(Action::requeue(Duration::from_secs(5)))
+        debug!(
+            "zone {} has not yet computed its hash, requeuing",
+            zone.name_any()
+        );
+        return Ok(Action::requeue(Duration::from_secs(5)));
     };
 
     let last_hash = zonefile
@@ -197,7 +200,7 @@ async fn reconcile_zonefiles(
         .as_ref()
         .and_then(|status| status.hash.as_ref());
 
-    if last_hash != Some(zone_hash) {
+    let serial = if last_hash != Some(zone_hash) {
         info!(
             "zone {}'s hash is not equal to zonefile {}'s ({zone_hash} != {last_hash:?}), regenerating configmap and rotating serial.",
             zone.name_any(),
@@ -216,38 +219,6 @@ async fn reconcile_zonefiles(
         // If it's a new day, use YYYYMMDD00, otherwise just use the increment
         // of the old serial.
         let next_serial = std::cmp::max(now_serial, zonefile.spec.serial + 1);
-
-        let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
-
-        let configmap_name = format!("{}-{next_serial}", zonefile.name_any());
-
-        let config_map = ConfigMap {
-            metadata: ObjectMeta {
-                name: Some(configmap_name.clone()),
-                namespace: zonefile.namespace(),
-                owner_references: Some(vec![owner_reference]),
-                ..ObjectMeta::default()
-            },
-            data: Some(BTreeMap::from([(
-                "zonefile".to_string(),
-                build_zonefile(
-                    ctx.client.clone(),
-                    &zonefile,
-                    &zone.spec.domain_name,
-                    next_serial,
-                )
-                .await?,
-            )])),
-            ..Default::default()
-        };
-
-        Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
-            .patch(
-                &configmap_name,
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Apply(config_map),
-            )
-            .await?;
 
         info!(
             "updating zone {}'s serial (before: {}, now: {next_serial})",
@@ -274,19 +245,55 @@ async fn reconcile_zonefiles(
             )
             .await?;
 
-        Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
-            .patch_status(
-                &zonefile.name_any(),
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Merge(json!({
-                    "status": {
-                        "hash": zone_hash,
-                        "configMap": configmap_name
-                    },
-                })),
+        next_serial
+    } else {
+        zonefile.spec.serial
+    };
+
+    let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
+
+    let configmap_name = format!("{}-{serial}", zonefile.name_any());
+
+    let config_map = ConfigMap {
+        metadata: ObjectMeta {
+            name: Some(configmap_name.clone()),
+            namespace: zonefile.namespace(),
+            owner_references: Some(vec![owner_reference]),
+            ..ObjectMeta::default()
+        },
+        data: Some(BTreeMap::from([(
+            "zonefile".to_string(),
+            build_zonefile(
+                ctx.client.clone(),
+                &zonefile,
+                &zone.spec.domain_name,
+                serial,
             )
-            .await?;
-    }
+            .await?,
+        )])),
+        ..Default::default()
+    };
+
+    Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
+        .patch(
+            &configmap_name,
+            &PatchParams::apply(CONTROLLER_NAME),
+            &Patch::Apply(config_map),
+        )
+        .await?;
+
+    Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
+        .patch_status(
+            &zonefile.name_any(),
+            &PatchParams::apply(CONTROLLER_NAME),
+            &Patch::Merge(json!({
+                "status": {
+                    "hash": zone_hash,
+                    "configMap": configmap_name
+                },
+            })),
+        )
+        .await?;
 
     Ok(Action::requeue(Duration::from_secs(30)))
 }
