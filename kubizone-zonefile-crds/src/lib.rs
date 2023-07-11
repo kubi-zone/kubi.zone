@@ -10,8 +10,6 @@ pub mod defaults {
     /// Time-to-Live to increase cache responsiveness.
     pub const TTL: u32 = 360;
 
-    pub const SERIAL: u32 = 1;
-
     /// Recommendation for small and stable zones[^1]: 7200 seconds (2 hours).
     ///
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
@@ -38,9 +36,6 @@ pub mod defaults {
     }
     pub(super) const fn ttl() -> u32 {
         TTL
-    }
-    pub(super) const fn serial() -> u32 {
-        SERIAL
     }
     pub(super) const fn retry() -> u32 {
         RETRY
@@ -96,14 +91,6 @@ pub struct ZoneFileSpec {
     /// keep this record in their cache.
     #[serde(default = "defaults::ttl")]
     pub ttl: u32,
-
-    /// Serial of the latest generated zonefile.
-    ///
-    /// The zonefile controller will automatically increment this value
-    /// whenever the zonefile configmap is rebuilt, in accordance with
-    /// [RFC 1912](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2)
-    #[serde(default = "defaults::serial")]
-    pub serial: u32,
 
     /// Number of seconds after which secondary name servers should
     /// query the master for the SOA record, to detect zone changes.
@@ -179,6 +166,13 @@ pub struct ZoneFileStatus {
     /// Used by the zonefile controller to trigger configmap rebuilds
     /// and zone serial rotation.
     pub hash: Option<String>,
+
+    /// Serial of the latest generated zonefile.
+    ///
+    /// The zonefile controller will automatically increment this value
+    /// whenever the zonefile configmap is rebuilt, in accordance with
+    /// [RFC 1912](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2)
+    pub serial: Option<u32>,
 
     /// .metadata.name of the latest generated configmap
     pub config_map: Option<String>,

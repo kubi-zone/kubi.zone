@@ -198,6 +198,8 @@ async fn reconcile_zonefiles(
         .and_then(|status| status.hash.as_ref());
 
     if last_hash != Some(zone_hash) {
+        let last_serial = zonefile.status.as_ref().and_then(|status| status.serial).unwrap_or_default();
+
         info!(
             "zone {}'s hash is not equal to zonefile {}'s ({zone_hash} != {last_hash:?}), regenerating configmap and rotating serial.",
             zone.name_any(),
@@ -215,7 +217,7 @@ async fn reconcile_zonefiles(
 
         // If it's a new day, use YYYYMMDD00, otherwise just use the increment
         // of the old serial.
-        let next_serial = std::cmp::max(now_serial, zonefile.spec.serial + 1);
+        let next_serial = std::cmp::max(now_serial, last_serial + 1);
 
         let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
 
@@ -250,29 +252,9 @@ async fn reconcile_zonefiles(
             .await?;
 
         info!(
-            "updating zone {}'s serial (before: {}, now: {next_serial})",
-            zone.name_any(),
-            zonefile.spec.serial
+            "updating zone {}'s serial (before: {last_serial}, now: {next_serial})",
+            zone.name_any()
         );
-
-        // We apply the serial patch first. That way, if the hash status
-        // application fails, the failure mode is that serial gets bumped
-        // again on the next reconciliation loop, and then the hash update
-        // hopefully works the second time around.
-        //
-        // It'd be better to be able to update both serial and hash in an atomic
-        // fashion, but none of the attempts I've made have succeeded.
-        Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
-            .patch(
-                &zonefile.name_any(),
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Merge(json!({
-                    "spec": {
-                        "serial": next_serial,
-                    },
-                })),
-            )
-            .await?;
 
         Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
             .patch_status(
@@ -281,6 +263,7 @@ async fn reconcile_zonefiles(
                 &Patch::Merge(json!({
                     "status": {
                         "hash": zone_hash,
+                        "serial": next_serial,
                         "configMap": configmap_name
                     },
                 })),
