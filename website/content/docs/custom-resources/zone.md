@@ -1,6 +1,6 @@
 +++
 title = "Zone"
-description = "A Zone represents a logical grouping of independent DNSRecords"
+description = "A Zone represents a logical grouping of DNSRecords and sub-zones."
 date = 2023-08-16T13:53:00+02:00
 updated= 2023-08-16T13:53:00+02:00
 draft = false
@@ -9,7 +9,7 @@ sort_by = "weight"
 template = "docs/page.html"
 
 [extra]
-lead = "A Zone represents a logical grouping of independent DNSRecords"
+lead = "A Zone represents a logical grouping of DNSRecords and sub-zones."
 toc = true
 top = false
 +++
@@ -18,11 +18,10 @@ top = false
 
 In DNS terms, a [Zone](https://en.wikipedia.org/wiki/DNS_zone) defines a subset of the DNS namespace.
 
-The same applies in Kubizone. Here, a Zone either represents a fully qualified domain name, or refers
+A zone either represents a fully qualified domain name, or a relative domain name and a reference
 to a parent zone of which it is a sub-zone. In the latter case, this parent can either itself
 represent a fully qualified domain name, or point to yet another zone.
-
-This `zoneRef` chain must eventually conclude in a Zone which represents a fully qualified domain.
+This chain of zone references must eventually conclude in a Zone which *does* represent a fully qualified domain.
 
 ## Examples
 A zone can either represent a [Fully Qualified Domain Name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name)

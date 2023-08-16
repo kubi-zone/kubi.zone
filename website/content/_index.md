@@ -25,7 +25,7 @@ weight = 10
 
 [[extra.list]]
 title = "Kubernetes Native"
-content = 'Managed <a href="#">DNSRecords</a> and <a href="#">Zones</a> like any other Kubernetes resource.'
+content = 'Managed <a href="/docs/custom-resources/dnsrecord/">DNSRecords</a> and <a href="/docs/custom-resources/zone/">Zones</a> like any other Kubernetes resource.'
 
 [[extra.list]]
 title = 'Build your own Automation'
