@@ -38,7 +38,7 @@ spec:
           ports:
             - name: dns
               containerPort: 53
-              protocol: TCP
+              protocol: UDP
           resources:
             {{- toYaml .Values.coredns.resources | nindent 12 }}
         - name: "updater"

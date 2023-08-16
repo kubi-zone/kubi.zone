@@ -73,7 +73,7 @@ pub const TARGET_ZONEFILE_LABEL: &str = "kubi.zone/zonefile";
 )]
 #[kube(status = "ZoneFileStatus")]
 #[kube(printcolumn = r#"{"name":"zone", "jsonPath": ".spec.zoneRef.name", "type": "string"}"#)]
-#[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".spec.serial", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".status.serial", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneFileSpec {
