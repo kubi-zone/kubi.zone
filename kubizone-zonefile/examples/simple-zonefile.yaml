@@ -32,3 +32,12 @@ metadata:
 spec:
   zoneRef:
     name: example-org
+---
+apiVersion: kubi.zone/v1alpha1
+kind: Record
+metadata:
+  name: www2-example-org
+spec:
+  domainName: www2.example.org.
+  type: CNAME
+  rdata: "www.example.org."
