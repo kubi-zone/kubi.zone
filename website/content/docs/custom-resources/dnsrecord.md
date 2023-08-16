@@ -15,10 +15,18 @@ top = false
 +++
 
 ## What is a DNS Record?
-A DNS Record is made up of a `domainName`, a `type`, a string of `rdata`, and in some cases a `zoneRef`.
+A DNS Record `.spec` is made up of:
+
+* a `domainName`
+* a `type`
+* a string of `rdata`
+
+and in cases where `domainName` does not contain a fully qualified domain name:
+
+* also a `zoneRef`.
 
 The `domainName` of the record can either be a fully qualified domain name such as `www.example.org.` (notice the trailing dot),
-or a relative name such as `www` or `www.subdomain`, in which case a `zoneRef` must also be specified which indicates which [Zone](@/docs/custom-resources/zone.md)
+or a relative name such as `www` or `www.subdomain`, in which case a `zoneRef` must also be specified indicating the parent [Zone](@/docs/custom-resources/zone.md)
 the record is relative to.
 
 The record `type` can be any which is [supported](https://en.wikipedia.org/wiki/List_of_DNS_record_types) by the domain name system, such as `A`, `AAAA`, `CNAME`, `MX`, etc..
