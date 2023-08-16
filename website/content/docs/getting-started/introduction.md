@@ -17,11 +17,11 @@ top = false
 ### Kubizone
 Kubizone is the core part of the project, and consists only of a single Kubernetes controller and two
 [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/),
-namely [DNSRecord](#)s and [Zone](#)s
+namely [DNSRecords](@/docs/custom-resources/dnsrecord.md) and [Zones](@/docs/custom-resources/zone.md)
 
 Kubizone keeps track of DNSRecords and Zones within a cluster, keeping track of ownership and associations
 between them, and invalidating the [hash](#) of a zone, if its constituent DNSRecords change.
 
 ### Kubizone Zonefile
 Separately from the Kubizone core project is the Kubizone Zonefile controller and its associated Custom
-Resource, the [Zonefile](#).
+Resource, the [Zonefile](@/docs/custom-resources/zonefile.md).
