@@ -126,8 +126,8 @@ pub struct ZoneFileSpec {
     pub expire: u32,
 
     /// Used in calculating the time to live for purposes of negative caching.
-    /// Authoritative name servers take the smaller of the SOA TTL and the
-    /// SOA MINIMUM to send as the SOA TTL in negative responses.
+    /// Authoritative name servers take the smaller of the SOA TTL and this value
+    /// to send as the SOA TTL in negative responses.
     ///
     /// Resolvers use the resulting SOA TTL to understand for how long they
     /// are allowed to cache a negative response.

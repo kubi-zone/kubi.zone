@@ -14,6 +14,8 @@ toc = true
 top = false
 +++
 
+The latest version of the `Zone`'s Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/Zone.yaml)
+
 ## What is a Zone?
 
 In DNS terms, a [Zone](https://en.wikipedia.org/wiki/DNS_zone) defines a subset of the DNS namespace.
@@ -50,8 +52,6 @@ spec:
     # Name refers to the .metadata.name of the zone we created above.
     name: example-org
 ```
-
-<small>A zone which represents neither a fully qualified domain name, nor points to a parent zone is invalid.</small>
 
 Applying the above manifests, we can query the Kubernetes API for information:
 

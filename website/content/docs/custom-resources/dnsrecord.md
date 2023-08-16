@@ -14,16 +14,21 @@ toc = true
 top = false
 +++
 
-## What is a DNS Record?
-A DNS Record `.spec` is made up of:
+The latest version of the `DNSRecord`'s Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/Record.yaml)
 
-* a `domainName`
-* a `type`
-* a string of `rdata`
+## What is a DNS Record?
+A [DNS Record](https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records) is a single named entry within a zone.
+
+## Spec
+A DNS Record `.spec` is made up of the following required fields:
+
+* `domainName`
+* `type`
+* `rdata`
 
 and in cases where `domainName` does not contain a fully qualified domain name:
 
-* also a `zoneRef`.
+* `zoneRef`.
 
 The `domainName` of the record can either be a fully qualified domain name such as `www.example.org.` (notice the trailing dot),
 or a relative name such as `www` or `www.subdomain`, in which case a `zoneRef` must also be specified indicating the parent [Zone](@/docs/custom-resources/zone.md)
