@@ -47,4 +47,6 @@ danger-recreate-crds:
 
 danger-test: danger-recreate-crds docker-publish helm-install-kubizone helm-install-zonefile
     kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
-    kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl delete
+    kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
+
+danger-test-coredns: danger-test helm-install-zonefile-coredns
