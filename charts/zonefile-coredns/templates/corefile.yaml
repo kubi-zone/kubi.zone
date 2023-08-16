@@ -8,9 +8,6 @@ data:
     .:53 {
         errors
         log stdout
-        health {
-            lameduck 5s
-        }
         ready
         {{- range .Values.zonefiles }}
         file /zonefiles/{{ . }}
