@@ -75,6 +75,7 @@ pub const TARGET_ZONEFILE_LABEL: &str = "kubi.zone/zonefile";
 #[kube(printcolumn = r#"{"name":"zone", "jsonPath": ".spec.zoneRef.name", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".status.serial", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"configmap", "jsonPath": ".status.configMap", "type": "string"}"#)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneFileSpec {
     /// Reference to a [`Zone`](kubizone_crds::Zone), optionally in a different namespace.
