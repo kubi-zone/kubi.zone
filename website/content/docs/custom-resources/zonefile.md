@@ -25,6 +25,22 @@ to produce [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/config
 of the [DNSRecords](@/docs/custom-resources/dnsrecord.md) and [Zones](@/docs/custom-resources/zone.md) defined within
 the cluster.
 
+
+## Examples
+The following manifest instructs the [Kubizone Zonefile Controller](@/docs/controllers/zonefile.md) to produce a `ConfigMap`
+describing the zone as represented by the [Zone](@/docs/custom-resources/zone.md) named `example-org`, and by extension all [DNSRecords](@/docs/custom-resources/dnsrecord.md)
+associated with it.
+
+```yaml
+apiVersion: zonefile.kubi.zone/v1alpha1
+kind: ZoneFile
+metadata:
+  name: example
+spec:
+  zoneRef:
+    name: example-org
+```
+
 ## Spec
 
 The `ZoneFile` resource has only one required field, a `zoneRef` which indicates the zone to generate the `ConfigMap` from.
@@ -69,4 +85,61 @@ Default values are derived from [RIPE Guidelines](https://www.ripe.net/publicati
 `negativeResponseCache` where the recommended (larger) values might cause long-lived caching of invalid or as-of-yet undefined
 answers to queries, because of the *eventually consistent* way in which Kubernetes controllers operate.
 
-## Example
+## Status
+
+### ConfigMap
+
+The latest generated ConfigMap *name* can be read from `.status.configMap`, and will have the name of the `ZoneFile` resource,
+followed by a dash, and finally the [automatically computed](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2) serial
+for the zone, e.g.: `example-2023081601`
+
+### Hash
+`.status.hash` reflects the last seen hash of the referenced zone.
+
+### Serial
+
+The latest computed serial (used for naming the configmap) is retrievable directly through `.status.serial`.
+
+
+## Inspection
+Applying the manifest from the [Example](#examples) into a namespace already containing the referenced `example-org` zone and a few DNSRecords
+will result in output similar to the following:
+```bash
+$ kubectl get zonefiles
+NAME      ZONE          SERIAL       HASH                  CONFIGMAP
+example   example-org   2023081601   7997031354861544638   example-2023081601
+```
+
+And then fetching the configmap reveals the following:
+
+```yaml
+apiVersion: v1
+data:
+  zonefile: |
+    $ORIGIN example.org.
+
+    example.org. IN SOA ns.example.org. noc.example.org. (
+        2023081601
+        86400
+        7200
+        3600000
+        360
+    )
+
+    www     360      IN    A      192.168.0.2
+    www.ref 360      IN    A      192.168.0.1
+    www2    360      IN    CNAME  www.example.org.
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2023-08-16T13:59:57Z"
+  name: example-2023081601
+  namespace: kubizone
+  ownerReferences:
+  - apiVersion: zonefile.kubi.zone/v1alpha1
+    controller: true
+    kind: ZoneFile
+    name: example
+    uid: da639cfc-c8a4-4be8-bba4-20ae11063e05
+  resourceVersion: "18567915"
+  uid: 6bb02221-bfd9-44e3-a4f0-1db1e006d565
+```
