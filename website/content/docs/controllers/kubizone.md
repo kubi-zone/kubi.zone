@@ -1,5 +1,5 @@
 +++
-title = "Kubizone"
+title = "Kubizone Controller"
 description = 'The Kubizone controller owns Zones and DNSRecords, determines zone and record associations automatically, and recomputes zone hashes when necessary.'
 date = 2023-08-16T13:53:00+02:00
 updated= 2023-08-16T13:53:00+02:00
