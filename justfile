@@ -18,6 +18,19 @@ docker-publish: docker-build
     docker push ghcr.io/mathiaspius/kubizone/kubizone:dev
     docker push ghcr.io/mathiaspius/kubizone/zonefile:dev
 
+helm-package-kubizone:
+    helm package charts/kubizone --destination charts/packaged/
+    
+helm-package-zonefile:
+    helm package charts/zonefile --destination charts/packaged/
+    
+helm-publish-kubizone: helm-package-kubizone
+    helm push charts/packaged/kubizone-$(grep 'version:' charts/kubizone/Chart.yaml | awk '{printf $2}').tgz oci://registry.kronform.pius.dev/kubizone
+    
+helm-publish-zonefile: helm-package-zonefile
+    helm push charts/packaged/zonefile-$(grep 'version:' charts/zonefile/Chart.yaml | awk '{printf $2}').tgz oci://registry.kronform.pius.dev/kubizone
+    
+
 helm-install-kubizone:
     helm -n kubizone upgrade --install  \
         --set image.tag=dev             \
@@ -50,3 +63,6 @@ danger-test: danger-recreate-crds docker-publish helm-install-kubizone helm-inst
     kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
 
 danger-test-coredns: danger-test helm-install-zonefile-coredns
+
+serve:
+    cd website && zola serve --open
