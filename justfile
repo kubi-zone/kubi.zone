@@ -63,6 +63,3 @@ danger-test: danger-recreate-crds docker-publish helm-install-kubizone helm-inst
     kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
 
 danger-test-coredns: danger-test helm-install-zonefile-coredns
-
-serve:
-    cd website && zola serve --open
