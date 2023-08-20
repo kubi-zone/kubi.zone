@@ -10,6 +10,7 @@ use super::ZoneRef;
     Serialize,
     Clone,
     Debug,
+    Default,
     JsonSchema,
     Hash,
     PartialEq,

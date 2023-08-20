@@ -179,6 +179,7 @@ mod tests {
             metadata: kube::core::ObjectMeta::default(),
         };
 
+        // Record in delegated namespace should be allowed.
         assert!(zone.validate_record(&Record {
             metadata: ObjectMeta {
                 namespace: Some(String::from("default")),
@@ -193,6 +194,96 @@ mod tests {
                 rdata: String::from("192.168.0.1")
             },
             status: None
+        }));
+
+        // Record in non-delegated namespace should fail.
+        assert!(!zone.validate_record(&Record {
+            metadata: ObjectMeta {
+                namespace: Some(String::from("not-default")),
+                ..Default::default()
+            },
+            spec: RecordSpec {
+                domain_name: String::from("www.example.org."),
+                zone_ref: None,
+                type_: String::from("A"),
+                class: String::from("IN"),
+                ttl: None,
+                rdata: String::from("192.168.0.1")
+            },
+            status: None
+        }));
+
+        // Record in delegated namespace, with invalid super-domain should fail.
+        assert!(!zone.validate_record(&Record {
+            metadata: ObjectMeta {
+                namespace: Some(String::from("default")),
+                ..Default::default()
+            },
+            spec: RecordSpec {
+                domain_name: String::from("www.test.com."),
+                zone_ref: None,
+                type_: String::from("A"),
+                class: String::from("IN"),
+                ttl: None,
+                rdata: String::from("192.168.0.1")
+            },
+            status: None
         }))
+    }
+
+    #[test]
+    fn test_record_type_limit() {
+        let zone = Zone {
+            spec: ZoneSpec {
+                domain_name: String::from("example.org."),
+                zone_ref: None,
+                delegations: vec![Delegation {
+                    namespaces: vec![String::from("default")],
+                    zones: vec![],
+                    records: vec![RecordDelegation {
+                        pattern: String::from("example.org."),
+                        record_types: vec![String::from("MX")],
+                    }],
+                }],
+            },
+            status: None,
+            metadata: kube::core::ObjectMeta::default(),
+        };
+
+        // Record in delegated namespace with delegated record type
+        // (MX) should be allowed.
+        assert!(zone.validate_record(&Record {
+            metadata: ObjectMeta {
+                namespace: Some(String::from("default")),
+                ..Default::default()
+            },
+            spec: RecordSpec {
+                domain_name: String::from("example.org."),
+                zone_ref: None,
+                type_: String::from("MX"),
+                class: String::from("IN"),
+                ttl: None,
+                rdata: String::from("10 mail1.example.org.")
+            },
+            status: None
+        }));
+
+        // Record in delegated namespace with non-delegated record type
+        // (A) should not be allowed.
+        assert!(!zone.validate_record(&Record {
+            metadata: ObjectMeta {
+                namespace: Some(String::from("default")),
+                ..Default::default()
+            },
+            spec: RecordSpec {
+                domain_name: String::from("example.org."),
+                zone_ref: None,
+                type_: String::from("A"),
+                class: String::from("IN"),
+                ttl: None,
+                rdata: String::from("192.168.0.1")
+            },
+            status: None
+        }));
     }
 }
