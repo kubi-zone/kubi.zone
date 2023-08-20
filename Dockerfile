@@ -1,5 +1,5 @@
 ##### Builder
-FROM rust:1.69-slim as builder
+FROM rust:1.71-slim as builder
 ARG UID=65203
 ARG GID=65203
 
@@ -31,7 +31,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry         \
     cp -r /usr/src/kubizone/target/x86_64-unknown-linux-musl/release/* /usr/local/bin/
 
 FROM scratch AS kubizone
-LABEL org.opencontainers.image.source=https://github.com/MathiasPius/kubizone
+LABEL org.opencontainers.image.source=https://github.com/kubi-zone/kubi.zone
 ARG UID=65203
 ARG GID=65203
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/passwd /etc/passwd
@@ -40,16 +40,4 @@ COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone /
 USER ${UID}:${GID}
 
 ENTRYPOINT ["/kubizone/kubizone"]
-CMD ["print-crds"]
-
-FROM scratch AS zonefile
-LABEL org.opencontainers.image.source=https://github.com/MathiasPius/kubizone
-ARG UID=65203
-ARG GID=65203
-COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/passwd /etc/passwd
-COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/group /etc/group
-COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone-zonefile /kubizone/zonefile
-USER ${UID}:${GID}
-
-ENTRYPOINT ["/kubizone/zonefile"]
 CMD ["print-crds"]
