@@ -12,8 +12,8 @@ tracing-subscriber = "0.3.17"
 
 # Kubernetes
 kubizone-crds = { path = "../kubizone-crds" }
-kube = { version = "0.83.0", default-features = false, features = ["derive", "rustls-tls", "client", "runtime"] }
-k8s-openapi = { version = "0.18.0", features = ["v1_25"] }
+kube = { workspace = true, features = ["derive", "rustls-tls", "client", "runtime"] }
+k8s-openapi = { workspace = true }
 
 # Async
 tokio = { version = "1.29.1", features = ["macros", "rt"] }
