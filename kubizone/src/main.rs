@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{command, Parser, Subcommand};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use kube::{Api, Client};
-use kubizone_crds::{Record, Zone};
+use kubizone_crds::v1alpha1::{Record, Zone};
 use tracing::log::warn;
 
 mod reconciliation;

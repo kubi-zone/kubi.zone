@@ -13,7 +13,10 @@ use kube::{
     runtime::{controller::Action, watcher, Controller},
     Api, Client, ResourceExt,
 };
-use kubizone_crds::{Record, Zone, PARENT_ZONE_LABEL};
+use kubizone_crds::{
+    v1alpha1::{Record, Zone},
+    PARENT_ZONE_LABEL,
+};
 use tracing::log::*;
 
 struct Data {

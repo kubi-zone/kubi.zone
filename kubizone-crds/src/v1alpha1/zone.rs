@@ -1,8 +1,8 @@
-use kube::{CustomResource, ResourceExt};
+use kube::{core::object::HasSpec, CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::ZoneRef;
+use super::{domain_matches_pattern, Record, ZoneRef};
 
 #[derive(
     CustomResource,
@@ -29,6 +29,7 @@ use super::ZoneRef;
 pub struct ZoneSpec {
     pub domain_name: String,
     pub zone_ref: Option<ZoneRef>,
+    pub delegations: Vec<Delegation>,
 }
 
 impl Zone {
@@ -38,6 +39,30 @@ impl Zone {
             namespace: self.namespace(),
         }
     }
+
+    /// Validate that the given Record is allowed, given the delegations of this Zone.
+    pub fn validate_record(&self, record: &Record) -> bool {
+        if !record.spec.domain_name.ends_with(&self.spec.domain_name) {
+            return false;
+        }
+
+        self.spec().delegations.iter().any(|delegation| {
+            delegation.covers_namespace(&record.namespace().unwrap_or_default())
+                && delegation.validate_record(&record.spec.type_, &record.spec.domain_name)
+        })
+    }
+
+    /// Validate that the given Zone is allowed by the delgations specified in this Zone.
+    pub fn validate_zone(&self, zone: &Zone) -> bool {
+        if !zone.spec.domain_name.ends_with(&self.spec.domain_name) {
+            return false;
+        }
+
+        self.spec().delegations.iter().any(|delegation| {
+            delegation.covers_namespace(&zone.namespace().unwrap_or_default())
+                && delegation.validate_zone(&zone.spec.domain_name)
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -45,4 +70,129 @@ impl Zone {
 pub struct ZoneStatus {
     pub fqdn: Option<String>,
     pub hash: Option<String>,
+}
+
+#[derive(
+    Serialize, Deserialize, Clone, Debug, JsonSchema, Hash, PartialEq, Eq, PartialOrd, Ord,
+)]
+pub struct RecordDelegation {
+    /// Pattern which delegated records must match.
+    pub pattern: String,
+
+    /// Type of record to allow. Empty list implies *any*.
+    #[serde(default)]
+    pub record_types: Vec<String>,
+}
+
+impl RecordDelegation {
+    pub fn validate(&self, record_type: &str, domain: &str) -> bool {
+        let record_type = record_type.to_uppercase();
+
+        return domain_matches_pattern(&self.pattern, domain)
+            && (self.record_types.is_empty()
+                || self
+                    .record_types
+                    .iter()
+                    .any(|delegated_type| delegated_type.to_uppercase() == record_type));
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, Clone, Debug, JsonSchema, Hash, PartialEq, Eq, PartialOrd, Ord,
+)]
+pub struct Delegation {
+    #[serde(default)]
+    pub namespaces: Vec<String>,
+    #[serde(default)]
+    pub zones: Vec<String>,
+    #[serde(default)]
+    pub records: Vec<RecordDelegation>,
+}
+
+impl Delegation {
+    /// Check if the given namespace is covered by this Delegation.
+    pub fn covers_namespace(&self, namespace: &str) -> bool {
+        if self.namespaces.is_empty() {
+            return true;
+        }
+
+        if self
+            .namespaces
+            .iter()
+            .any(|delegated_namespace| delegated_namespace == namespace)
+        {
+            return true;
+        }
+
+        false
+    }
+
+    /// Verify that a (record type, domain) pair matches the delegation
+    /// rules of this delegation.
+    pub fn validate_record(&self, record_type: &str, domain: &str) -> bool {
+        for record_delegation in &self.records {
+            if record_delegation.validate(record_type, domain) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// Verify that a domain matches the zone delegation
+    /// rules of this delegation.
+    pub fn validate_zone(&self, domain: &str) -> bool {
+        for zone_delegation in &self.zones {
+            if domain_matches_pattern(zone_delegation, domain) {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use kube::core::ObjectMeta;
+
+    use crate::v1alpha1::{Record, RecordSpec};
+
+    use super::{Delegation, RecordDelegation, Zone, ZoneSpec};
+
+    #[test]
+    fn test_record_delegation() {
+        let zone = Zone {
+            spec: ZoneSpec {
+                domain_name: String::from("example.org."),
+                zone_ref: None,
+                delegations: vec![Delegation {
+                    namespaces: vec![String::from("default")],
+                    zones: vec![],
+                    records: vec![RecordDelegation {
+                        pattern: String::from("*.example.org."),
+                        record_types: vec![],
+                    }],
+                }],
+            },
+            status: None,
+            metadata: kube::core::ObjectMeta::default(),
+        };
+
+        assert!(zone.validate_record(&Record {
+            metadata: ObjectMeta {
+                namespace: Some(String::from("default")),
+                ..Default::default()
+            },
+            spec: RecordSpec {
+                domain_name: String::from("www.example.org."),
+                zone_ref: None,
+                type_: String::from("A"),
+                class: String::from("IN"),
+                ttl: None,
+                rdata: String::from("192.168.0.1")
+            },
+            status: None
+        }))
+    }
 }

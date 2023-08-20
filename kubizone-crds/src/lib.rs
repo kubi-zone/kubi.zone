@@ -1,13 +1,9 @@
-use std::{
-    fmt::{Debug, Display},
-    hash::Hash,
-};
+use std::{fmt::Debug, hash::Hash};
 
 pub mod v1alpha1;
 
-use kube::{runtime::reflector::ObjectRef, CustomResource, Resource, ResourceExt};
-use schemars::JsonSchema;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use kube::{runtime::reflector::ObjectRef, Resource, ResourceExt};
+use serde::de::DeserializeOwned;
 
 pub const PARENT_ZONE_LABEL: &str = "kubi.zone/parent-zone";
 
