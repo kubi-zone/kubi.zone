@@ -8,7 +8,7 @@ args:
   - reconcile
 
 image:
-  repository: ghcr.io/mathiaspius/kubizone/kubizone
+  repository: ghcr.io/kubi-zone/kubi.zone/kubizone
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
