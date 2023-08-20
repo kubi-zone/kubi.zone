@@ -3,7 +3,5 @@ resolver = "2"
 members = [
     "kubizone-crds",
     "kubizone",
-    "kubizone-zonefile-crds",
-    "kubizone-zonefile",
     "kubizone-crd-utils"
 ]
