@@ -42,7 +42,12 @@ impl Zone {
 
     /// Validate that the given Record is allowed, given the delegations of this Zone.
     pub fn validate_record(&self, record: &Record) -> bool {
-        if !record.spec.domain_name.ends_with(&self.spec.domain_name) {
+        if !record
+            .status
+            .as_ref()
+            .and_then(|status| status.fqdn.as_ref())
+            .is_some_and(|fqdn| fqdn.ends_with(&self.spec.domain_name))
+        {
             return false;
         }
 
@@ -54,7 +59,12 @@ impl Zone {
 
     /// Validate that the given Zone is allowed by the delgations specified in this Zone.
     pub fn validate_zone(&self, zone: &Zone) -> bool {
-        if !zone.spec.domain_name.ends_with(&self.spec.domain_name) {
+        if !zone
+            .status
+            .as_ref()
+            .and_then(|status| status.fqdn.as_ref())
+            .is_some_and(|fqdn| fqdn.ends_with(&self.spec.domain_name))
+        {
             return false;
         }
 
