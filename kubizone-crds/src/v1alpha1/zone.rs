@@ -85,6 +85,7 @@ pub struct ZoneStatus {
 #[derive(
     Serialize, Deserialize, Clone, Debug, JsonSchema, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
+#[serde(rename_all = "camelCase")]
 pub struct RecordDelegation {
     /// Pattern which delegated records must match.
     pub pattern: String,
@@ -146,6 +147,7 @@ impl Delegation {
             }
         }
 
+        // If no record delegations exist, deny.
         false
     }
 
@@ -158,6 +160,7 @@ impl Delegation {
             }
         }
 
+        // If no zone delegations exist, deny.
         false
     }
 }
