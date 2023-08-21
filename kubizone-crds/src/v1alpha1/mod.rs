@@ -26,10 +26,13 @@ impl Display for ZoneRef {
     }
 }
 
+/// Authority on whether a domain matches a domain pattern.
 pub fn domain_matches_pattern(pattern: &str, domain: &str) -> bool {
     let pattern_segments: Vec<_> = pattern.split('.').rev().collect();
     let domain_segments: Vec<_> = domain.split('.').rev().collect();
 
+    // If domain and pattern contain an unequal number of segments, and the first
+    // segment of the pattern is not a plain wildcard, then this pattern cannot match.
     if pattern_segments.len() != domain_segments.len() && pattern_segments.last() != Some(&"*") {
         return false;
     }
@@ -94,5 +97,17 @@ mod tests {
 
         // Should NOT match subdomains of explicit paths without wildcards.
         assert!(!domain_matches_pattern("example.org", "www.example.org"));
+
+        // Should match on non-prefix wildcard.
+        assert!(domain_matches_pattern(
+            "www.*.example.org",
+            "www.test.example.org"
+        ));
+
+        // Should not match on secondary subdivision.
+        assert!(!domain_matches_pattern(
+            "www.*.example.org",
+            "www.subdomain.test.example.org"
+        ));
     }
 }
