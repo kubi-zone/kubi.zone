@@ -16,6 +16,7 @@ pub struct ZoneRef {
     pub namespace: Option<String>,
 }
 
+/*
 impl Display for ZoneRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(namespace) = &self.namespace {
@@ -25,6 +26,7 @@ impl Display for ZoneRef {
         }
     }
 }
+*/
 
 /// Authority on whether a domain matches a domain pattern.
 pub fn domain_matches_pattern(pattern: &str, domain: &str) -> bool {

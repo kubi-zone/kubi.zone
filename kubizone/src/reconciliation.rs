@@ -194,7 +194,114 @@ async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::E
     Ok(())
 }
 
+async fn find_longest_matching_parent_zone(client: Client) {
+    // Retrieve all zones with a defined fqdn.
+    let mut all_zones: Vec<_> = Api::<Zone>::all(client)
+        .list(&ListParams::default())
+        .await?
+        .into_iter()
+        .filter_map(|zone| {
+            zone.status
+                .as_ref()
+                .and_then(|status| status.fqdn.as_ref().cloned())
+                .map(|fqdn| (fqdn, zone))
+        })
+        .collect();
+
+    // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
+    //
+    // Reversing the fqdns sorts by domain suffix.
+    //
+    // Reversing the order puts the longer domains first, letting us use `Iterator::find`
+    // to get the longest matching suffix.
+    all_zones.sort_by(|(a, _), (b, _)| {
+        b.chars()
+            .rev()
+            .collect::<Vec<_>>()
+            .cmp(&a.chars().rev().collect())
+    });
+
+    // Find the longest parent zone which is a suffix of our fqdn.
+    let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(fqdn, zone)| {
+        if record.spec.domain_name.ends_with(&fqdn) {
+            Some(zone)
+        } else {
+            None
+        }
+    }) else {
+        warn!(
+            "record {} ({}) does not fit into any found Zone",
+            record.name_any(),
+            &record.spec.domain_name
+        );
+        return Ok(Action::requeue(Duration::from_secs(30)));
+    };
+}
+
 async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
+    if let Some(zone_ref) = zone.spec.zone_ref.as_ref() {
+        // Follow the zoneRef to the supposed parent zone, if it exists
+        // or requeue later if it does not.
+        let Some(parent_zone) = Api::<Zone>::namespaced(
+            ctx.client.clone(),
+            &zone_ref
+                .namespace
+                .as_ref()
+                .or(zone.namespace().as_ref())
+                .cloned()
+                .unwrap(),
+        )
+        .get_opt(&zone_ref.name)
+        .await?
+        else {
+            warn!("zone {} references unknown zone {}", zone, zone_ref);
+            return Ok(Action::requeue(Duration::from_secs(30)));
+        };
+
+        // If the parent does not have a fully qualified domain name defined
+        // yet, we can't check if the delegations provided by it are valid.
+        // Postpone the reconcilliation until a later time, when the fqdn
+        // has (hopefully) been determined.
+        let Some(parent_fqdn) = parent_zone
+            .status
+            .as_ref()
+            .and_then(|status| status.fqdn.as_ref())
+        else {
+            info!(
+                "parent zone {} missing fqdn, requeuing.",
+                parent_zone.name_any()
+            );
+            return Ok(Action::requeue(Duration::from_secs(5)));
+        };
+
+        // This is only "alleged", since we don't know yet if the referenced
+        // zone's delegations allow the adoption.
+        let alleged_fqdn = format!("{}.{}", zone.spec.domain_name, parent_fqdn);
+
+        for delegation in &parent_zone.spec.delegations {
+            // Unwrap safe: All zones have namespaces.
+            if delegation.covers_namespace(zone.namespace().as_deref().unwrap())
+                && delegation.validate_zone(&alleged_fqdn)
+            {
+                set_zone_fqdn(ctx.client.clone(), &zone, &alleged_fqdn).await?;
+
+                set_zone_parent_ref(
+                    ctx.client.clone(),
+                    &zone,
+                    parent_zone.zone_ref().to_string(),
+                )
+                .await?;
+
+                break;
+            }
+        }
+        warn!("parent zone {parent_zone} was found, but its delegations does not allow adoption of {zone} with {alleged_fqdn}");
+    } else if zone.spec.domain_name.ends_with('.') {
+        // If this zone ends in a dot, it is itself a fully qualified domain name,
+        // and no zoneRef is defined, then we must deduce the parent zone through
+        // domain traversal.
+    }
+
     // Determine the fqdn of the zone
     if zone.spec.domain_name.ends_with('.') {
         set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.domain_name).await?;
@@ -337,14 +444,6 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
     };
 
     Ok(Action::requeue(Duration::from_secs(30)))
-}
-
-fn zone_error_policy(zone: Arc<Zone>, error: &kube::Error, _ctx: Arc<Data>) -> Action {
-    error!(
-        "zone {} reconciliation encountered error: {error}",
-        zone.name_any()
-    );
-    Action::requeue(Duration::from_secs(60))
 }
 
 fn record_error_policy(record: Arc<Record>, error: &kube::Error, _ctx: Arc<Data>) -> Action {

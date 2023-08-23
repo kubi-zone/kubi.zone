@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use kube::{core::object::HasSpec, CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -72,6 +74,13 @@ impl Zone {
             delegation.covers_namespace(&zone.namespace().unwrap_or_default())
                 && delegation.validate_zone(&zone.spec.domain_name)
         })
+    }
+}
+
+impl Display for Zone {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Unwrap safety: Zones are namespaced and therefore always have a name.
+        write!(f, "{}/{}", self.metadata.namespace.unwrap(), self.name_any())
     }
 }
 
@@ -298,5 +307,3 @@ mod tests {
             },
             status: None
         }));
-    }
-}

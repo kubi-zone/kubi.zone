@@ -8,6 +8,8 @@ use tracing::log::warn;
 
 mod reconciliation;
 
+mod zone;
+
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
