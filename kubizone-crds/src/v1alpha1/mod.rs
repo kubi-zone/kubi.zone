@@ -16,17 +16,25 @@ pub struct ZoneRef {
     pub namespace: Option<String>,
 }
 
-/*
+impl ZoneRef {
+    pub fn as_label(&self) -> String {
+        if let Some(namespace) = &self.namespace {
+            format!("{}.{namespace}", self.name)
+        } else {
+            self.name.clone()
+        }
+    }
+}
+
 impl Display for ZoneRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(namespace) = &self.namespace {
-            write!(f, "{}.{namespace}", self.name)
+            write!(f, "{namespace}/{}", self.name)
         } else {
             f.write_str(&self.name)
         }
     }
 }
-*/
 
 /// Authority on whether a domain matches a domain pattern.
 pub fn domain_matches_pattern(pattern: &str, domain: &str) -> bool {

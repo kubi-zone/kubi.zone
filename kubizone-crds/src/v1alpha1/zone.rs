@@ -80,7 +80,12 @@ impl Zone {
 impl Display for Zone {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Unwrap safety: Zones are namespaced and therefore always have a name.
-        write!(f, "{}/{}", self.metadata.namespace.unwrap(), self.name_any())
+        write!(
+            f,
+            "{}/{}",
+            self.metadata.namespace.as_ref().unwrap(),
+            self.name_any()
+        )
     }
 }
 
@@ -307,3 +312,5 @@ mod tests {
             },
             status: None
         }));
+    }
+}

@@ -17,13 +17,11 @@ use kubizone_crds::{
     v1alpha1::{Record, Zone},
     PARENT_ZONE_LABEL,
 };
-use tracing::log::*;
+use tracing::log::{info, warn};
 
 struct Data {
     client: Client,
 }
-
-pub const CONTROLLER_NAME: &str = "kubi.zone/zone-resolver";
 
 async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), kube::Error> {
     if zone

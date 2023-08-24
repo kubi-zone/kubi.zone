@@ -6,7 +6,7 @@ use kube::{Api, Client};
 use kubizone_crds::v1alpha1::{Record, Zone};
 use tracing::log::warn;
 
-mod reconciliation;
+//mod reconciliation;
 
 mod zone;
 
@@ -64,7 +64,7 @@ async fn main() {
                 kubizone_crd_utils::recreate_crd_destructively::<Record>(api.clone()).await;
             }
 
-            reconciliation::reconcile(client).await;
+            zone::controller(client).await;
         }
     }
 }

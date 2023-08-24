@@ -1,17 +1,31 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    collections::{hash_map::DefaultHasher, BTreeSet},
+    hash::{Hash, Hasher},
+    sync::Arc,
+    time::Duration,
+};
 
+use futures::StreamExt;
+use k8s_openapi::serde_json::json;
 use kube::{
+    api::{ListParams, Patch, PatchParams},
     runtime::{controller::Action, watcher, Controller},
     Api, Client, ResourceExt,
 };
-use kubizone_crds::{v1alpha1::Zone, PARENT_ZONE_LABEL};
+use kubizone_crds::{
+    v1alpha1::{Record, Zone},
+    PARENT_ZONE_LABEL,
+};
+
 use tracing::log::*;
 
 struct Data {
     client: Client,
 }
 
-pub async fn reconcile(client: Client) {
+pub const CONTROLLER_NAME: &str = "kubi.zone/zone-resolver";
+
+pub async fn controller(client: Client) {
     let zones = Api::<Zone>::all(client.clone());
 
     let zone_controller = Controller::new(zones.clone(), watcher::Config::default())
@@ -34,6 +48,8 @@ pub async fn reconcile(client: Client) {
                 Err(e) => warn!("reconcile failed: {}", e),
             }
         });
+
+    zone_controller.await;
 }
 
 async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
@@ -98,6 +114,8 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
         // If this zone ends in a dot, it is itself a fully qualified domain name,
         // and no zoneRef is defined, then we must deduce the parent zone through
         // domain traversal.
+    } else {
+        warn!("{zone} has neither zoneRef or a fully qualified domainName, making it impossible to deduce its parent zone.");
     }
 
     // Determine the fqdn of the zone
@@ -172,6 +190,7 @@ async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), ku
     }
     Ok(())
 }
+
 async fn set_zone_parent_ref(
     client: Client,
     zone: &Arc<Zone>,
@@ -205,7 +224,60 @@ async fn set_zone_parent_ref(
     Ok(())
 }
 
-async fn set_r
+async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::Error> {
+    let new_hash = {
+        // Reference to this zone, which other zones and records
+        // will use to refer to it by.
+        let zone_ref = ListParams::default().labels(&format!(
+            "{PARENT_ZONE_LABEL}={}",
+            zone.zone_ref().to_string()
+        ));
+
+        // Get a hash of the collective child zones and records and use
+        // as the basis for detecting change.
+        let child_zones: BTreeSet<_> = Api::<Zone>::all(client.clone())
+            .list(&zone_ref)
+            .await?
+            .into_iter()
+            .map(|zone| zone.spec)
+            .collect();
+
+        let child_records: BTreeSet<_> = Api::<Record>::all(client.clone())
+            .list(&zone_ref)
+            .await?
+            .into_iter()
+            .map(|record| record.spec)
+            .collect();
+
+        let mut hasher = DefaultHasher::new();
+        (child_zones, child_records).hash(&mut hasher);
+
+        hasher.finish().to_string()
+    };
+
+    let current_hash = zone.status.as_ref().and_then(|status| status.hash.as_ref());
+
+    if current_hash != Some(&new_hash) {
+        info!(
+            "zone {}'s hash changed (before: {current_hash:?}, now: {new_hash})",
+            zone.name_any()
+        );
+
+        Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
+            .patch_status(
+                &zone.name_any(),
+                &PatchParams::apply(CONTROLLER_NAME),
+                &Patch::Merge(json!({
+                    "status": {
+                        "hash": new_hash,
+                    },
+                })),
+            )
+            .await?;
+    }
+
+    Ok(())
+}
 
 fn zone_error_policy(zone: Arc<Zone>, error: &kube::Error, _ctx: Arc<Data>) -> Action {
     error!(
