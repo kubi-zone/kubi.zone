@@ -188,8 +188,11 @@ async fn reconcile_zonefiles(
     apply_zonefile_backref(ctx.client.clone(), &zonefile, &zone).await?;
 
     let Some(zone_hash) = zone.status.as_ref().and_then(|zone| zone.hash.as_ref()) else {
-        debug!("zone {} has not yet computed its hash, requeuing", zone.name_any());
-        return Ok(Action::requeue(Duration::from_secs(5)))
+        debug!(
+            "zone {} has not yet computed its hash, requeuing",
+            zone.name_any()
+        );
+        return Ok(Action::requeue(Duration::from_secs(5)));
     };
 
     let last_hash = zonefile
@@ -198,7 +201,11 @@ async fn reconcile_zonefiles(
         .and_then(|status| status.hash.as_ref());
 
     if last_hash != Some(zone_hash) {
-        let last_serial = zonefile.status.as_ref().and_then(|status| status.serial).unwrap_or_default();
+        let last_serial = zonefile
+            .status
+            .as_ref()
+            .and_then(|status| status.serial)
+            .unwrap_or_default();
 
         info!(
             "zone {}'s hash is not equal to zonefile {}'s ({zone_hash} != {last_hash:?}), regenerating configmap and rotating serial.",

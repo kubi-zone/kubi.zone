@@ -183,7 +183,7 @@ impl Delegation {
 mod tests {
     use kube::core::ObjectMeta;
 
-    use crate::v1alpha1::{Record, RecordSpec};
+    use crate::v1alpha1::{Record, RecordSpec, RecordStatus};
 
     use super::{Delegation, RecordDelegation, Zone, ZoneSpec};
 
@@ -220,7 +220,9 @@ mod tests {
                 ttl: None,
                 rdata: String::from("192.168.0.1")
             },
-            status: None
+            status: Some(RecordStatus {
+                fqdn: Some(String::from("www.example.org."))
+            })
         }));
 
         // Record in non-delegated namespace should fail.
@@ -292,7 +294,9 @@ mod tests {
                 ttl: None,
                 rdata: String::from("10 mail1.example.org.")
             },
-            status: None
+            status: Some(RecordStatus {
+                fqdn: Some(String::from("example.org."))
+            })
         }));
 
         // Record in delegated namespace with non-delegated record type
