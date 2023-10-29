@@ -1,5 +1,5 @@
 use kube::{CustomResource, ResourceExt};
-use kubizone_crds::ZoneRef;
+use kubizone_crds::v1alpha1::ZoneRef;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

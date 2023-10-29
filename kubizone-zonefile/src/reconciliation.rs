@@ -1,5 +1,5 @@
 use futures::StreamExt;
-use kubizone_crds::{Record, RecordSpec, Zone};
+use kubizone_crds::v1alpha1::{Record, RecordSpec, Zone};
 use kubizone_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
