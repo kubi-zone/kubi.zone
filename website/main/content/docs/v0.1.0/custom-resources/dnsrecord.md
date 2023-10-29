@@ -31,7 +31,7 @@ and in cases where `domainName` does not contain a fully qualified domain name:
 * `zoneRef`.
 
 The `domainName` of the record can either be a fully qualified domain name such as `www.example.org.` (notice the trailing dot),
-or a relative name such as `www` or `www.subdomain`, in which case a `zoneRef` must also be specified indicating the parent [Zone](@/docs/custom-resources/zone.md)
+or a relative name such as `www` or `www.subdomain`, in which case a `zoneRef` must also be specified indicating the parent [Zone](../custom-resources/zone.md)
 the record is relative to.
 
 The record `type` can be any which is [supported](https://en.wikipedia.org/wiki/List_of_DNS_record_types) by the domain name system, such as `A`, `AAAA`, `CNAME`, `MX`, etc..
@@ -51,7 +51,7 @@ spec:
   type: A
   rdata: "192.168.0.2"
 ```
-Since no parent zone is defined, the [Kubizone controller](@/docs/controllers/kubizone.md) will attempt to deduce the parent zone based
+Since no parent zone is defined, the [Kubizone controller](../controllers/kubizone.md) will attempt to deduce the parent zone based
 on the `domainName`. If no zone is found which matches any of the potential parent domains (`subdomain.example.org.`, `example.org.`, `org.`),
 the record will effectively be an orphan.
 

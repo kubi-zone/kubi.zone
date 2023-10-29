@@ -6,7 +6,7 @@
 
 {% block header %}
   {# This value is matched by the config.extra.menu.main~section #}
-  {% set current_section = "docs" %}
+  {% set current_section = section.path %}
   {{ macros_header::header(current_section=current_section)}}
 {% endblock header %}
 
@@ -28,7 +28,9 @@
                 </div>
               </div>
             {% endfor %}
-            {% for s in index.subsections %}
+
+            {% set latest_section = get_section(path="docs/latest/_index.md") %}
+            {% for s in index.subsections | sort | reverse %}
               {% set subsection = get_section(path=s) %}
               {% if subsection.pages %}
                 {% for page in subsection.pages %}
@@ -37,7 +39,19 @@
                     <a class="stretched-link" href="{{ page.permalink }}">{{ page.title }} &rarr;</a>
                   </div>
                 </div>
-                {% endfor %}                                    
+                {% endfor %}
+              {% else %}
+                <div class="card my-3">
+                  <div class="card-body">
+                    {% if subsection.components | last != "latest" %}
+                      {% if subsection.title == latest_section.title %}
+                        <a class="stretched-link" href="{{ subsection.permalink }}">{{ subsection.title }} (latest stable) &rarr;</a>
+                      {% else %}
+                        <a class="stretched-link" href="{{ subsection.permalink }}">{{ subsection.title }} &rarr;</a>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                </div>
               {% endif %}
             {% endfor %}
           </div>

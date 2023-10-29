@@ -16,7 +16,7 @@ top = false
 
 Monitoring of Zones and DNSRecords are independent processes, as described below.
 
-Both [Zones](@/docs/custom-resources/zone.md) and [DNSRecords](@/docs/custom-resources/dnsrecord.md)
+Both [Zones](../custom-resources/zone.md) and [DNSRecords](../custom-resources/dnsrecord.md)
 across the entire cluster are monitored for changes.
 
 ## Zones
@@ -37,8 +37,8 @@ Whenever a Zone resource change is detected, the following process occurs:
    
 2. Compute and update zone's `.status.hash`.
    
-   A new hash is calculated based on the [DNSRecords](@/docs/custom-resources/dnsrecord.md) and
-   [Zones](@/docs/custom-resources/zone.md) which reference this zone, and the zone's status is patched
+   A new hash is calculated based on the [DNSRecords](../custom-resources/dnsrecord.md) and
+   [Zones](../custom-resources/zone.md) which reference this zone, and the zone's status is patched
    with this new hash.
 
 ## DNSRecords

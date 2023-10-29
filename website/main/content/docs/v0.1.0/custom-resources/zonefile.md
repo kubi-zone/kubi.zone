@@ -20,15 +20,15 @@ The latest version of the `ZoneFile`'s' Custom Resource Definition can be found 
 
 Within the Domain Name System a [Zone file](https://en.wikipedia.org/wiki/Zone_file) is a text file that describes a DNS zone.
 
-Within the context of Kubizone, a `ZoneFile` resource describes a way for the [Kubizone Zonefile Controller](@/docs/controllers/zonefile.md)
+Within the context of Kubizone, a `ZoneFile` resource describes a way for the [Kubizone Zonefile Controller](../controllers/zonefile.md)
 to produce [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) containing the zonefile representations
-of the [DNSRecords](@/docs/custom-resources/dnsrecord.md) and [Zones](@/docs/custom-resources/zone.md) defined within
+of the [DNSRecords](../custom-resources/dnsrecord.md) and [Zones](../custom-resources/zone.md) defined within
 the cluster.
 
 
 ## Examples
-The following manifest instructs the [Kubizone Zonefile Controller](@/docs/controllers/zonefile.md) to produce a `ConfigMap`
-describing the zone as represented by the [Zone](@/docs/custom-resources/zone.md) named `example-org`, and by extension all [DNSRecords](@/docs/custom-resources/dnsrecord.md)
+The following manifest instructs the [Kubizone Zonefile Controller](../controllers/zonefile.md) to produce a `ConfigMap`
+describing the zone as represented by the [Zone](../custom-resources/zone.md) named `example-org`, and by extension all [DNSRecords](../custom-resources/dnsrecord.md)
 associated with it.
 
 ```yaml

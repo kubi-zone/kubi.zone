@@ -16,7 +16,7 @@ top = false
 
 ## Procedure
 
-Whenever a [Zone](@/docs/custom-resources/zone.md) referenced by a [ZoneFile](@/docs/custom-resources/zonefile.md) changes,
+Whenever a [Zone](../custom-resources/zone.md) referenced by a [ZoneFile](../custom-resources/zonefile.md) changes,
 the controller compares the `.status.hash` of the ZoneFile to that of the referenced `Zone`.
 
 If the two hashes do not match, the ZoneFile is considered invalidated, and a new serial is generated according to

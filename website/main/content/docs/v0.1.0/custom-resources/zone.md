@@ -76,7 +76,7 @@ Changes in records or subzones of subzones do not affect the hash of parent zone
 ### Fully Qualified Domain Name
 If the zone has been defined using a fully qualified `domainName`, then `.status.fqdn` will simply reflect the `.spec.domainName`.
 
-If not, then the [Kubizone controller](@/docs/controllers/kubizone.md) 
+If not, then the [Kubizone controller](../controllers/kubizone.md) 
 will automatically deduce the fully qualified domain name for the zone, by following and concatenating domain names of the parent
 zones as defined by the zoneRefs until a fully qualified domain name is constructed.
 
@@ -84,5 +84,5 @@ In the [Example](#examples) above, the `.status.fqdn` of the `subdomain-example-
 the controller as `subdomain.example.org.`
 
 ## Labels
-In order to track associations between zones, the [Kubizone controller](@/docs/controllers/kubizone.md) applies a
+In order to track associations between zones, the [Kubizone controller](../controllers/kubizone.md) applies a
 `kubi.zone/parent-zone` label to sub-zones, in order to monitor changes in these that might affect the parent zones.
