@@ -14,8 +14,7 @@ toc = true
 top = false
 +++
 
-The project is designed to be modular, to allow extension and compatibility with or by similar projects,
-sometimes at the cost of some installation complexity.
+The project is designed to be modular, to allow extension and compatibility with or by similar projects.
 
 ## Kubizone
 Kubizone is the core part of the project, and consists only of a single Kubernetes controller and two
