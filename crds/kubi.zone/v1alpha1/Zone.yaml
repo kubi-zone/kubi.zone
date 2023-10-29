@@ -33,6 +33,38 @@ spec:
         properties:
           spec:
             properties:
+              delegations:
+                items:
+                  properties:
+                    namespaces:
+                      default: []
+                      items:
+                        type: string
+                      type: array
+                    records:
+                      default: []
+                      items:
+                        properties:
+                          pattern:
+                            description: Pattern which delegated records must match.
+                            type: string
+                          recordTypes:
+                            default: []
+                            description: Type of record to allow. Empty list implies *any*.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - pattern
+                        type: object
+                      type: array
+                    zones:
+                      default: []
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
               domainName:
                 type: string
               zoneRef:
@@ -47,6 +79,7 @@ spec:
                 - name
                 type: object
             required:
+            - delegations
             - domainName
             type: object
           status:
