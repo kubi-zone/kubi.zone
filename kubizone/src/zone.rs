@@ -167,11 +167,11 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
         }
         (Some(zone_ref), true) => {
             warn!("zone {zone}'s has both a fully qualified domain_name ({}) and a zoneRef({zone_ref}). It cannot have both.", zone.spec.domain_name);
-            return Ok(Action::await_change());
+            return Ok(Action::requeue(Duration::from_secs(300)));
         }
         (None, false) => {
             warn!("{zone} has neither zoneRef nor a fully qualified domainName, making it impossible to deduce its parent zone.");
-            return Ok(Action::await_change());
+            return Ok(Action::requeue(Duration::from_secs(300)));
         }
     }
 
