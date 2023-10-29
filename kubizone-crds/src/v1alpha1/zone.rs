@@ -42,6 +42,12 @@ impl Zone {
         }
     }
 
+    pub fn fqdn(&self) -> Option<&str> {
+        self.status
+            .as_ref()
+            .and_then(|status| status.fqdn.as_deref())
+    }
+
     /// Validate that the given Record is allowed, given the delegations of this Zone.
     pub fn validate_record(&self, record: &Record) -> bool {
         if !record
