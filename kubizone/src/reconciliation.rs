@@ -366,8 +366,7 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
             .max_by_key(|zone| zone.fqdn().unwrap().len())
             else {
                 warn!(
-                    "record {} ({}) does not fit into any found Zone",
-                    record.name_any(),
+                    "record {record} ({}) does not fit into any found Zone",
                     &record.spec.domain_name
                 );
                 return Ok(Action::requeue(Duration::from_secs(30)));
