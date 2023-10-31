@@ -115,41 +115,18 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
         (None, true) => {
             set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.domain_name).await?;
 
-            // Retrieve all zones with a defined fqdn.
-            let mut all_zones: Vec<_> = Api::<Zone>::all(ctx.client.clone())
+            // Fetch all zones from across the cluster and then filter down results to only parent
+            // zones which are valid parent zones for this one.
+            //
+            // This means filtering out parent zones without fqdns, as well as ones which do not
+            // have appropriate delegations for our `needle`'s namespace, record type, and suffix.
+            let Some(longest_parent_zone) = Api::<Zone>::all(ctx.client.clone())
                 .list(&ListParams::default())
                 .await?
                 .into_iter()
-                .filter_map(|zone| {
-                    zone.status
-                        .as_ref()
-                        .and_then(|status| status.fqdn.as_ref().cloned())
-                        .map(|fqdn| (fqdn, zone))
-                })
-                .collect();
-
-            // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
-            //
-            // Reversing the fqdns sorts by domain suffix.
-            //
-            // Reversing the order puts the longer domains first, letting us use `Iterator::find`
-            // to get the longest matching suffix.
-            all_zones.sort_by(|(a, _), (b, _)| {
-                b.chars()
-                    .rev()
-                    .collect::<Vec<_>>()
-                    .cmp(&a.chars().rev().collect())
-            });
-
-            // Find the longest parent zone which matches our fqdn *and* allows delegation to our
-            // zone.
-            let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(_, zone)| {
-                if zone.validate_zone(&zone) {
-                    Some(zone)
-                } else {
-                    None
-                }
-            }) else {
+                .filter(|parent| parent.validate_zone(&zone))
+                .max_by_key(|parent| parent.fqdn().unwrap().len())
+            else {
                 warn!(
                     "zone {} ({}) does not fit into any found parent Zone",
                     zone.name_any(),
