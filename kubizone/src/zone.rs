@@ -119,7 +119,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
             // zones which are valid parent zones for this one.
             //
             // This means filtering out parent zones without fqdns, as well as ones which do not
-            // have appropriate delegations for our `needle`'s namespace, record type, and suffix.
+            // have appropriate delegations for our `zone`'s namespace and suffix.
             let Some(longest_parent_zone) = Api::<Zone>::all(ctx.client.clone())
                 .list(&ListParams::default())
                 .await?

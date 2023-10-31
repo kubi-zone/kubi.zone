@@ -353,47 +353,25 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
     if record.spec.domain_name.ends_with('.') {
         set_record_fqdn(ctx.client.clone(), &record, &record.spec.domain_name).await?;
 
-        // Retrieve all zones with a defined fqdn.
-        let mut all_zones: Vec<_> = Api::<Zone>::all(ctx.client.clone())
+        // Fetch all zones from across the cluster and then filter down results to only parent
+        // zones which are valid parent zones for this one.
+        //
+        // This means filtering out parent zones without fqdns, as well as ones which do not
+        // have appropriate delegations for our `needle`'s namespace, record type, and suffix.
+        let Some(longest_parent_zone) = Api::<Zone>::all(ctx.client.clone())
             .list(&ListParams::default())
             .await?
             .into_iter()
-            .filter_map(|zone| {
-                zone.status
-                    .as_ref()
-                    .and_then(|status| status.fqdn.as_ref().cloned())
-                    .map(|fqdn| (fqdn, zone))
-            })
-            .collect();
-
-        // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
-        //
-        // Reversing the fqdns sorts by domain suffix.
-        //
-        // Reversing the order puts the longer domains first, letting us use `Iterator::find`
-        // to get the longest matching suffix.
-        all_zones.sort_by(|(a, _), (b, _)| {
-            b.chars()
-                .rev()
-                .collect::<Vec<_>>()
-                .cmp(&a.chars().rev().collect())
-        });
-
-        // Find the longest parent zone which is a suffix of our fqdn.
-        let Some(longest_parent_zone) = all_zones.into_iter().find_map(|(fqdn, zone)| {
-            if record.spec.domain_name.ends_with(&fqdn) {
-                Some(zone)
-            } else {
-                None
-            }
-        }) else {
-            warn!(
-                "record {} ({}) does not fit into any found Zone",
-                record.name_any(),
-                &record.spec.domain_name
-            );
-            return Ok(Action::requeue(Duration::from_secs(30)));
-        };
+            .filter_map(|zone| zone.validate_record(&record))
+            .max_by_key(|zone| zone.fqdn().unwrap().len())
+            else {
+                warn!(
+                    "record {} ({}) does not fit into any found Zone",
+                    record.name_any(),
+                    &record.spec.domain_name
+                );
+                return Ok(Action::requeue(Duration::from_secs(30)));
+            };
 
         set_record_parent_ref(
             ctx.client.clone(),

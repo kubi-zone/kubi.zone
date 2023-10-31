@@ -49,7 +49,7 @@ pub fn domain_matches_pattern(pattern: &str, domain: &str) -> bool {
 
     for (pattern, domain) in pattern_segments
         .into_iter()
-        .zip(domain_segments.into_iter())
+        .zip(domain_segments)
     {
         if pattern == domain {
             continue;
