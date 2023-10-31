@@ -1,11 +1,11 @@
-{{- if .Values.serviceAccount.create -}}
+{{- if .Values.kubizone.serviceAccount.create -}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ include "kubizone.serviceAccountName" . }}
   labels:
     {{- include "kubizone.labels" . | nindent 4 }}
-  {{- with .Values.serviceAccount.annotations }}
+  {{- with .Values.kubizone.serviceAccount.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -19,6 +19,11 @@ rules:
 - apiGroups: ["kubi.zone"]
   resources: ["zones", "records", "records/status", "zones/status"]
   verbs: ["patch", "update", "get", "watch", "list"]
+{{- if .Values.dangerRecreateCrds }}
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["patch", "update", "get", "list", "delete", "watch", "create"]
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

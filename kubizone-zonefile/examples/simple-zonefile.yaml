@@ -6,6 +6,8 @@ metadata:
   name: example-org
 spec:
   domainName: example.org.
+  delegations:
+    - zones: ["*.example.org."]
 ---
 apiVersion: kubi.zone/v1alpha1
 kind: Record
@@ -50,6 +52,8 @@ spec:
   domainName: subdomain
   zoneRef:
     name: example-org
+  delegations:
+    - zones: ["www.subdomain.example.org."]
 ---
 apiVersion: kubi.zone/v1alpha1
 kind: Record

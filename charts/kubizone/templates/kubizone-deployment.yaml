@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubizone.fullname" . }}-controller
+  labels:
+    {{- include "kubizone.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kubizone.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kubizone.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.kubizone.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubizone.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.kubizone.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubizone.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.kubizone.podSecurityContext | nindent 8 }}
+      {{- if .Values.dangerRecreateCrds }}
+      initContainers:
+        - name: crds
+          securityContext:
+            {{- toYaml .Values.kubizone.securityContext | nindent 12 }}
+          {{- if .Values.kubizone.image.tag }}
+          image: "{{ .Values.kubizone.image.repository }}:{{ .Values.kubizone.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.kubizone.image.repository }}:v{{ .Chart.AppVersion }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.kubizone.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.kubizone.resources | nindent 12 }}
+          args:
+            - danger-recreate-crds
+      {{- end }}
+      containers:
+        - name: controller
+          securityContext:
+            {{- toYaml .Values.kubizone.securityContext | nindent 12 }}
+          {{- if .Values.kubizone.image.tag }}
+          image: "{{ .Values.kubizone.image.repository }}:{{ .Values.kubizone.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.kubizone.image.repository }}:v{{ .Chart.AppVersion }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.kubizone.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.kubizone.resources | nindent 12 }}
+          args:
+            {{- toYaml .Values.kubizone.args | nindent 12 }}
+      {{- with .Values.kubizone.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubizone.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubizone.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

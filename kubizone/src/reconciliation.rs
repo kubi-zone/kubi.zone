@@ -50,9 +50,9 @@ async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), ku
 async fn set_zone_parent_ref(
     client: Client,
     zone: &Arc<Zone>,
-    parent_ref: String,
+    parent_ref: ZoneRef,
 ) -> Result<(), kube::Error> {
-    if zone.labels().get(PARENT_ZONE_LABEL) != Some(&parent_ref) {
+    if zone.labels().get(PARENT_ZONE_LABEL) != Some(&parent_ref.as_label()) {
         info!(
             "updating zone {}'s {PARENT_ZONE_LABEL} to {parent_ref}",
             zone.name_any()
@@ -65,7 +65,7 @@ async fn set_zone_parent_ref(
                 &Patch::Merge(json!({
                     "metadata": {
                         "labels": {
-                            PARENT_ZONE_LABEL: parent_ref
+                            PARENT_ZONE_LABEL: parent_ref.as_label()
                         },
                     }
                 })),
@@ -286,7 +286,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
                 set_zone_parent_ref(
                     ctx.client.clone(),
                     &zone,
-                    parent_zone.zone_ref().to_string(),
+                    parent_zone.zone_ref(),
                 )
                 .await?;
 
@@ -339,7 +339,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
         set_zone_parent_ref(
             ctx.client.clone(),
             &zone,
-            parent_zone.zone_ref().to_string(),
+            parent_zone.zone_ref(),
         )
         .await?;
     };

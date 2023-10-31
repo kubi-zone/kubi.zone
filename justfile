@@ -1,41 +1,31 @@
 #!/usr/bin/env just
-
 kubizone_version := `cat kubizone/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
 zonefile_version := `cat kubizone-zonefile/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
 
 default:
     just --list
 
-docker-build-kubizone:    
-    docker build --target kubizone -t ghcr.io/mathiaspius/kubizone/kubizone:dev .
+@build target:
+    docker build --target {{target}} -t ghcr.io/mathiaspius/kubizone/{{target}}:dev .
 
-docker-build-zonefile:
-    docker build --target zonefile -t ghcr.io/mathiaspius/kubizone/zonefile:dev .
+@publish target: (build target)
+    docker push ghcr.io/mathiaspius/kubizone/{{target}}:dev
 
-docker-build: docker-build-kubizone docker-build-zonefile
+@publish-all: (publish "kubizone") (publish "zonefile")
 
-docker-publish: docker-build
-    docker push ghcr.io/mathiaspius/kubizone/kubizone:dev
-    docker push ghcr.io/mathiaspius/kubizone/zonefile:dev
-
-helm-install-kubizone:
-    helm -n kubizone upgrade --install  \
-        --set image.tag=dev             \
-        --set image.pullPolicy=Always   \
+@install zonefile="false" recreate="false":
+    helm -n kubizone upgrade --install          \
+        --set kubizone.image.tag=dev            \
+        --set zonefile.image.tag=dev            \
+        --set zonefile.enable={{zonefile}}      \
+        --set dangerRecreateCrds={{recreate}}   \
+        --set image.pullPolicy=Always           \
         kubizone ./charts/kubizone
 
-helm-install-zonefile:
-    helm -n kubizone upgrade --install  \
-        --set image.tag=dev             \
-        --set image.pullPolicy=Always   \
-        zonefile ./charts/zonefile
-
-helm-install-zonefile-coredns:
-    helm -n kubizone upgrade --install              \
-        --set zonefile.image.tag=dev                \
-        --set zonefile.image.pullPolicy=Always      \
-        --set "zonefiles={example}"                 \
-        zonefile-coredns ./charts/zonefile-coredns
+@test:
+    kubectl -n kubizone delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true
+    kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
+    kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
 
 dump-crds:
     cargo run --bin kubizone-zonefile -- dump-crds crds
@@ -45,8 +35,4 @@ danger-recreate-crds:
     cargo run --bin kubizone-zonefile -- danger-recreate-crds
     cargo run --bin kubizone -- danger-recreate-crds
 
-danger-test: danger-recreate-crds docker-publish helm-install-kubizone helm-install-zonefile
-    kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
-    kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
-
-danger-test-coredns: danger-test helm-install-zonefile-coredns
+#danger-test-coredns: danger-test helm-install-zonefile-coredns
