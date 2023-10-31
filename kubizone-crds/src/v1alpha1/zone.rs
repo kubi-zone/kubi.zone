@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use kube::{core::object::HasSpec, CustomResource, ResourceExt};
+use kube::{core::object::HasSpec, CustomResource, ResourceExt, Resource};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -74,6 +74,11 @@ impl Zone {
             .is_some_and(|fqdn| fqdn.ends_with(&self.spec.domain_name))
         {
             return false;
+        }
+
+        // Cannot be a subdomain of itself
+        if self.uid() == zone.uid() {
+            return false
         }
 
         self.spec().delegations.iter().any(|delegation| {
