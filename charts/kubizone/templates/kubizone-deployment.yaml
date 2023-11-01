@@ -40,6 +40,9 @@ spec:
             {{- toYaml .Values.kubizone.resources | nindent 12 }}
           args:
             - danger-recreate-crds
+          env:
+            - name: RUST_LOG
+              value: kubizone={{ .Values.logLevel }}
       {{- end }}
       containers:
         - name: controller

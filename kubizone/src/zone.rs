@@ -92,20 +92,16 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
             // zone's delegations allow the adoption.
             let alleged_fqdn = format!("{}.{}", zone.spec.domain_name, parent_fqdn);
 
-            for delegation in &parent_zone.spec.delegations {
-                // Unwrap safe: All zones have namespaces.
-                if delegation.covers_namespace(zone.namespace().as_deref().unwrap())
+            if parent_zone.spec.delegations.iter().any(|delegation| {
+                delegation.covers_namespace(zone.namespace().as_deref().unwrap())
                     && delegation.validate_zone(&alleged_fqdn)
-                {
-                    set_zone_fqdn(ctx.client.clone(), &zone, &alleged_fqdn).await?;
-
-                    set_zone_parent_ref(ctx.client.clone(), &zone, parent_zone.zone_ref()).await?;
-
-                    return Ok(Action::requeue(Duration::from_secs(300)));
-                }
+            }) {
+                set_zone_fqdn(ctx.client.clone(), &zone, &alleged_fqdn).await?;
+                set_zone_parent_ref(ctx.client.clone(), &zone, parent_zone.zone_ref()).await?;
+            } else {
+                warn!("parent zone {parent_zone} was found, but its delegations does not allow adoption of {zone} with {alleged_fqdn}");
+                return Ok(Action::requeue(Duration::from_secs(300)));
             }
-            warn!("parent zone {parent_zone} was found, but its delegations does not allow adoption of {zone} with {alleged_fqdn}");
-            return Ok(Action::requeue(Duration::from_secs(300)));
         }
         (None, true) => {
             set_zone_fqdn(ctx.client.clone(), &zone, &zone.spec.domain_name).await?;

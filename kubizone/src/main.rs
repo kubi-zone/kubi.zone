@@ -6,8 +6,6 @@ use kube::{Api, Client};
 use kubizone_crds::v1alpha1::{Record, Zone};
 use tracing::log::warn;
 
-//mod reconciliation;
-
 mod zone;
 
 #[derive(Debug, Parser)]

@@ -20,7 +20,8 @@ default:
         --set zonefile.enable={{zonefile}}      \
         --set dangerRecreateCrds={{recreate}}   \
         --set image.pullPolicy=Always           \
-        kubizone ./charts/kubizone
+        kubizone ./charts/kubizone              \
+        && kubectl delete pods -n kubizone --all
 
 @test:
     kubectl -n kubizone delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true

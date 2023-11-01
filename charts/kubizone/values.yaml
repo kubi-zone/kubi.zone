@@ -7,6 +7,8 @@ fullnameOverride: ""
 
 dangerRecreateCrds: false
 
+logLevel: DEBUG
+
 kubizone:
   image:
     repository: ghcr.io/mathiaspius/kubizone/kubizone

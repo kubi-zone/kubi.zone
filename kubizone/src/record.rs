@@ -143,7 +143,7 @@ async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::E
         // will use to refer to it by.
         let zone_ref = ListParams::default().labels(&format!(
             "{PARENT_ZONE_LABEL}={}",
-            zone.zone_ref().to_string()
+            zone.zone_ref().as_label()
         ));
 
         // Get a hash of the collective child zones and records and use
@@ -350,6 +350,9 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
 
 async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action, kube::Error> {
     // Determine the fqdn of the record
+
+
+    
     if record.spec.domain_name.ends_with('.') {
         set_record_fqdn(ctx.client.clone(), &record, &record.spec.domain_name).await?;
 
@@ -375,7 +378,7 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
         set_record_parent_ref(
             ctx.client.clone(),
             &record,
-            longest_parent_zone.zone_ref().to_string(),
+            longest_parent_zone.zone_ref().as_label(),
         )
         .await?;
     } else {
@@ -413,7 +416,7 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
         set_record_parent_ref(
             ctx.client.clone(),
             &record,
-            parent_zone.zone_ref().to_string(),
+            parent_zone.zone_ref().as_label(),
         )
         .await?;
     };

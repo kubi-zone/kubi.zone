@@ -3,6 +3,7 @@ use std::fmt::Display;
 use kube::{core::object::HasSpec, CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use tracing::*;
 
 use super::{domain_matches_pattern, Record, ZoneRef};
 
@@ -160,6 +161,7 @@ impl Delegation {
             return true;
         }
 
+        trace!("delegation {self:?} does not cover {namespace}");
         false
     }
 
