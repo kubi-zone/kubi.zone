@@ -88,7 +88,7 @@ async fn set_record_parent_ref(
                 &Patch::Merge(json!({
                     "metadata": {
                         "labels": {
-                            PARENT_ZONE_LABEL: parent_ref
+                            PARENT_ZONE_LABEL: parent_ref.as_label()
                         },
                     }
                 })),

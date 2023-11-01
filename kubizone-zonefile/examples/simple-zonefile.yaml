@@ -8,6 +8,9 @@ spec:
   domainName: example.org.
   delegations:
     - zones: ["*.example.org."]
+    - records:
+      - pattern: "*.subdomain.example.org."
+      - pattern: "www.example.org."
 ---
 apiVersion: kubi.zone/v1alpha1
 kind: Record

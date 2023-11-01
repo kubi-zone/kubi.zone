@@ -47,6 +47,14 @@ pub struct RecordStatus {
     pub fqdn: Option<String>,
 }
 
+impl Record {
+    pub fn fqdn(&self) -> Option<&str> {
+        self.status
+            .as_ref()
+            .and_then(|status| status.fqdn.as_deref())
+    }
+}
+
 impl Display for Record {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Unwrap safety: Records are namespaced and therefore always have a name.

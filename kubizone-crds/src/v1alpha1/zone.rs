@@ -51,29 +51,49 @@ impl Zone {
 
     /// Validate that the given Record is allowed, given the delegations of this Zone.
     pub fn validate_record(&self, record: &Record) -> bool {
-        if !record
-            .status
-            .as_ref()
-            .and_then(|status| status.fqdn.as_ref())
-            .is_some_and(|fqdn| fqdn.ends_with(&self.spec.domain_name))
-        {
+        if !record.fqdn().is_some_and(|fqdn| {
+            self.fqdn()
+                .is_some_and(|parent_fqdn| fqdn.ends_with(parent_fqdn))
+        }) {
+            trace!(
+                "record {} is not a subdomain of {}",
+                record.fqdn().unwrap_or_default(),
+                self.fqdn().unwrap_or_default()
+            );
             return false;
         }
 
-        self.spec().delegations.iter().any(|delegation| {
+        if self.spec().delegations.iter().any(|delegation| {
             delegation.covers_namespace(&record.namespace().unwrap_or_default())
                 && delegation.validate_record(&record.spec.type_, &record.spec.domain_name)
-        })
+        }) {
+            debug!(
+                "zone {} allows delegation to record {}",
+                self.fqdn().unwrap_or_default(),
+                record.fqdn().unwrap_or_default()
+            );
+            true
+        } else {
+            trace!(
+                "zone {} forbid delegation to record {}",
+                self.fqdn().unwrap_or_default(),
+                record.fqdn().unwrap_or_default()
+            );
+            false
+        }
     }
 
     /// Validate that the given Zone is allowed by the delgations specified in this Zone.
     pub fn validate_zone(&self, zone: &Zone) -> bool {
-        if !zone
-            .status
-            .as_ref()
-            .and_then(|status| status.fqdn.as_ref())
-            .is_some_and(|fqdn| fqdn.ends_with(&self.spec.domain_name))
-        {
+        if !zone.fqdn().is_some_and(|fqdn| {
+            self.fqdn()
+                .is_some_and(|parent_fqdn| fqdn.ends_with(parent_fqdn))
+        }) {
+            trace!(
+                "zone {} is not a subdomain of {}",
+                zone.fqdn().unwrap_or_default(),
+                self.fqdn().unwrap_or_default()
+            );
             return false;
         }
 
@@ -118,7 +138,7 @@ pub struct RecordDelegation {
 
     /// Type of record to allow. Empty list implies *any*.
     #[serde(default)]
-    pub record_types: Vec<String>,
+    pub types: Vec<String>,
 }
 
 impl RecordDelegation {
@@ -126,9 +146,9 @@ impl RecordDelegation {
         let record_type = record_type.to_uppercase();
 
         return domain_matches_pattern(&self.pattern, domain)
-            && (self.record_types.is_empty()
+            && (self.types.is_empty()
                 || self
-                    .record_types
+                    .types
                     .iter()
                     .any(|delegated_type| delegated_type.to_uppercase() == record_type));
     }
@@ -211,7 +231,7 @@ mod tests {
                     zones: vec![],
                     records: vec![RecordDelegation {
                         pattern: String::from("*.example.org."),
-                        record_types: vec![],
+                        types: vec![],
                     }],
                 }],
             },
@@ -284,7 +304,7 @@ mod tests {
                     zones: vec![],
                     records: vec![RecordDelegation {
                         pattern: String::from("example.org."),
-                        record_types: vec![String::from("MX")],
+                        types: vec![String::from("MX")],
                     }],
                 }],
             },
