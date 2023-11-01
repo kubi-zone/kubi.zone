@@ -23,7 +23,7 @@ struct Data {
     client: Client,
 }
 
-pub const CONTROLLER_NAME: &str = "kubi.zone/zone-resolver";
+const CONTROLLER_NAME: &str = "kubi.zone/zone-resolver";
 
 pub async fn controller(client: Client) {
     let zones = Api::<Zone>::all(client.clone());
@@ -31,6 +31,11 @@ pub async fn controller(client: Client) {
     let zone_controller = Controller::new(zones.clone(), watcher::Config::default())
         .watches(
             Api::<Zone>::all(client.clone()),
+            watcher::Config::default(),
+            kubizone_crds::watch_reference(PARENT_ZONE_LABEL),
+        )
+        .watches(
+            Api::<Record>::all(client.clone()),
             watcher::Config::default(),
             kubizone_crds::watch_reference(PARENT_ZONE_LABEL),
         )
@@ -129,7 +134,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
             };
         }
         (Some(zone_ref), true) => {
-            warn!("zone {zone}'s has both a fully qualified domain_name ({}) and a zoneRef({zone_ref}). It cannot have both.", zone.spec.domain_name);
+            warn!("zone {zone} has both a fully qualified domain_name ({}) and a zoneRef({zone_ref}). It cannot have both.", zone.spec.domain_name);
             return Ok(Action::requeue(Duration::from_secs(300)));
         }
         (None, false) => {

@@ -1,4 +1,6 @@
-use kube::CustomResource;
+use std::fmt::Display;
+
+use kube::{CustomResource, ResourceExt};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -43,4 +45,16 @@ pub struct RecordSpec {
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 pub struct RecordStatus {
     pub fqdn: Option<String>,
+}
+
+impl Display for Record {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Unwrap safety: Records are namespaced and therefore always have a name.
+        write!(
+            f,
+            "{}/{}",
+            self.metadata.namespace.as_ref().unwrap(),
+            self.name_any()
+        )
+    }
 }

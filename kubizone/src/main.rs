@@ -6,6 +6,7 @@ use kube::{Api, Client};
 use kubizone_crds::v1alpha1::{Record, Zone};
 use tracing::log::warn;
 
+mod record;
 mod zone;
 
 #[derive(Debug, Parser)]
@@ -62,7 +63,10 @@ async fn main() {
                 kubizone_crd_utils::recreate_crd_destructively::<Record>(api.clone()).await;
             }
 
-            zone::controller(client).await;
+            tokio::select! {
+                _ = zone::controller(client.clone()) => (),
+                _ = record::controller(client) => ()
+            }
         }
     }
 }
