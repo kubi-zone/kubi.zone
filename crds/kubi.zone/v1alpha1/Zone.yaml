@@ -48,7 +48,7 @@ spec:
                           pattern:
                             description: Pattern which delegated records must match.
                             type: string
-                          recordTypes:
+                          types:
                             default: []
                             description: Type of record to allow. Empty list implies *any*.
                             items:
