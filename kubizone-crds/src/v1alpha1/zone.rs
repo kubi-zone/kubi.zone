@@ -124,8 +124,21 @@ impl Display for Zone {
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneStatus {
+    #[serde(default)]
+    pub entries: Vec<ZoneEntry>,
     pub fqdn: Option<String>,
     pub hash: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct ZoneEntry {
+    pub domain_name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub class: String,
+    pub ttl: u32,
+    pub rdata: String,
 }
 
 #[derive(
