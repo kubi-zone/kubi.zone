@@ -99,12 +99,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
                 {
                     set_zone_fqdn(ctx.client.clone(), &zone, &alleged_fqdn).await?;
 
-                    set_zone_parent_ref(
-                        ctx.client.clone(),
-                        &zone,
-                        parent_zone.zone_ref(),
-                    )
-                    .await?;
+                    set_zone_parent_ref(ctx.client.clone(), &zone, parent_zone.zone_ref()).await?;
 
                     return Ok(Action::requeue(Duration::from_secs(300)));
                 }
@@ -120,27 +115,22 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
             //
             // This means filtering out parent zones without fqdns, as well as ones which do not
             // have appropriate delegations for our `zone`'s namespace and suffix.
-            let Some(longest_parent_zone) = Api::<Zone>::all(ctx.client.clone())
+            if let Some(longest_parent_zone) = Api::<Zone>::all(ctx.client.clone())
                 .list(&ListParams::default())
                 .await?
                 .into_iter()
                 .filter(|parent| parent.validate_zone(&zone))
                 .max_by_key(|parent| parent.fqdn().unwrap().len())
-            else {
+            {
+                set_zone_parent_ref(ctx.client.clone(), &zone, longest_parent_zone.zone_ref())
+                    .await?;
+            } else {
                 warn!(
                     "zone {} ({}) does not fit into any found parent Zone",
                     zone.name_any(),
                     &zone.spec.domain_name
                 );
-                return Ok(Action::requeue(Duration::from_secs(30)));
             };
-
-            set_zone_parent_ref(
-                ctx.client.clone(),
-                &zone,
-                longest_parent_zone.zone_ref(),
-            )
-            .await?;
         }
         (Some(zone_ref), true) => {
             warn!("zone {zone}'s has both a fully qualified domain_name ({}) and a zoneRef({zone_ref}). It cannot have both.", zone.spec.domain_name);
@@ -153,7 +143,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
     }
 
     update_zone_hash(zone, ctx.client.clone()).await?;
-    Ok(Action::requeue(Duration::from_secs(30)))
+    Ok(Action::requeue(Duration::from_secs(300)))
 }
 
 async fn set_zone_fqdn(client: Client, zone: &Zone, fqdn: &str) -> Result<(), kube::Error> {
@@ -220,7 +210,7 @@ async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::E
         // will use to refer to it by.
         let zone_ref = ListParams::default().labels(&format!(
             "{PARENT_ZONE_LABEL}={}",
-            zone.zone_ref().to_string()
+            zone.zone_ref().as_label()
         ));
 
         // Get a hash of the collective child zones and records and use

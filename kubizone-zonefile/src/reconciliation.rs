@@ -27,7 +27,7 @@ async fn build_zonefile(
     origin: &str,
     serial: u32,
 ) -> Result<String, kube::Error> {
-    let label = format!("{PARENT_ZONE_LABEL}={}", zonefile.zone_ref().to_string());
+    let label = format!("{PARENT_ZONE_LABEL}={}", zonefile.zone_ref().as_label());
     debug!("generating zone by finding records matching {label}");
     let zone_ref = ListParams::default().labels(&label);
 
