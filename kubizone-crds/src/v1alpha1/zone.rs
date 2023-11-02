@@ -83,7 +83,15 @@ pub mod defaults {
 #[serde(rename_all = "camelCase")]
 pub struct ZoneSpec {
     pub domain_name: String,
+
+    /// Optional reference to a parent zone which this zone is a sub-zone of.
+    /// 
+    /// Zones must have *either* a zoneRef, or end in a '.', making it a fully
+    /// qualified domain name. It cannot have both.
     pub zone_ref: Option<ZoneRef>,
+
+    /// List of namespaced records and zones which are allowed to "insert"
+    /// themselves into this zone. See the [`Delegation`] type for more information.
     pub delegations: Vec<Delegation>,
 
     /// Number of zonefile revisions to keep around in the form of ConfigMaps.
@@ -145,6 +153,7 @@ pub struct ZoneSpec {
 }
 
 impl Zone {
+    /// Produce a zoneRef pointing to this zone
     pub fn zone_ref(&self) -> ZoneRef {
         ZoneRef {
             name: self.name_any(),
@@ -152,6 +161,7 @@ impl Zone {
         }
     }
 
+    /// Fetch the computed FQDN from this zone, if one has been set.
     pub fn fqdn(&self) -> Option<&str> {
         self.status
             .as_ref()
@@ -234,7 +244,17 @@ impl Display for Zone {
 #[serde(rename_all = "camelCase")]
 pub struct ZoneStatus {
     pub entries: Vec<ZoneEntry>,
+
+    /// Zones fully qualified domain name.
+    /// 
+    /// If the `.spec.domainName` is already fully qualified, these are identical.
+    /// 
+    /// If instead the Zone uses a `.spec.zoneRef` to indicate its parent,
+    /// this will be the concatenated version of this zone's `.spec.domainName`
+    /// and the parent's `.status.fqdn`
     pub fqdn: Option<String>,
+
+    /// Hash value of all relevant zone entries.
     pub hash: Option<String>,
 
     /// Serial of the latest generated zonefile.
