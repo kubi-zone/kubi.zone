@@ -143,7 +143,7 @@ async fn reconcile_records(record: Arc<Record>, ctx: Arc<Data>) -> Result<Action
 
             if parent_zone.spec.delegations.iter().any(|delegation| {
                 delegation.covers_namespace(record.namespace().as_deref().unwrap())
-                    && delegation.validate_record(&record.spec.type_, &alleged_fqdn)
+                    && delegation.validate_record(parent_fqdn, &record.spec.type_, &alleged_fqdn)
             }) {
                 set_record_fqdn(ctx.client.clone(), &record, &alleged_fqdn).await?;
                 set_record_parent_ref(ctx.client.clone(), &record, &parent_zone.zone_ref()).await?;

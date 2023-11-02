@@ -157,34 +157,38 @@ impl Zone {
 
     /// Validate that the given Record is allowed, given the delegations of this Zone.
     pub fn validate_record(&self, record: &Record) -> bool {
-        if !record.fqdn().is_some_and(|fqdn| {
-            self.fqdn()
-                .is_some_and(|parent_fqdn| fqdn.ends_with(parent_fqdn))
-        }) {
-            trace!(
-                "record {} is not a subdomain of {}",
-                record.fqdn().unwrap_or_default(),
-                self.fqdn().unwrap_or_default()
-            );
+        let Some(parent_fqdn) = self.fqdn() else {
+            trace!("parent zone {self} has no fqdn, and can therefore not validate record");
+            return false;
+        };
+
+        let Some(record_fqdn) = record.fqdn() else {
+            trace!("record {record} has no fqdn, and can therefore not be validated");
+            return false;
+        };
+
+        if !record
+            .fqdn()
+            .is_some_and(|fqdn| fqdn.ends_with(parent_fqdn))
+        {
+            trace!("record {record_fqdn} is not a subdomain of {parent_fqdn}");
             return false;
         }
 
+        //trace!("DELEGATIONS: {:#?}", self.spec().delegations);
+
         if self.spec().delegations.iter().any(|delegation| {
             delegation.covers_namespace(&record.namespace().unwrap_or_default())
-                && delegation.validate_record(&record.spec.type_, &record.spec.domain_name)
+                && delegation.validate_record(
+                    parent_fqdn,
+                    &record.spec.type_,
+                    &record.spec.domain_name,
+                )
         }) {
-            debug!(
-                "zone {} allows delegation to record {}",
-                self.fqdn().unwrap_or_default(),
-                record.fqdn().unwrap_or_default()
-            );
+            debug!("zone {parent_fqdn} allows delegation to record {record_fqdn}");
             true
         } else {
-            trace!(
-                "zone {} forbid delegation to record {}",
-                self.fqdn().unwrap_or_default(),
-                record.fqdn().unwrap_or_default()
-            );
+            trace!("zone {parent_fqdn} forbid delegation to record {record_fqdn}");
             false
         }
     }
@@ -281,10 +285,10 @@ pub struct RecordDelegation {
 }
 
 impl RecordDelegation {
-    pub fn validate(&self, record_type: &str, domain: &str) -> bool {
+    pub fn validate(&self, zone_fqdn: &str, record_type: &str, domain: &str) -> bool {
         let record_type = record_type.to_uppercase();
 
-        return domain_matches_pattern(&self.pattern, domain)
+        return domain_matches_pattern(&self.pattern.replace('@', zone_fqdn), domain)
             && (self.types.is_empty()
                 || self
                     .types
@@ -326,9 +330,9 @@ impl Delegation {
 
     /// Verify that a (record type, domain) pair matches the delegation
     /// rules of this delegation.
-    pub fn validate_record(&self, record_type: &str, domain: &str) -> bool {
+    pub fn validate_record(&self, zone_fqdn: &str, record_type: &str, domain: &str) -> bool {
         for record_delegation in &self.records {
-            if record_delegation.validate(record_type, domain) {
+            if record_delegation.validate(zone_fqdn, record_type, domain) {
                 return true;
             }
         }

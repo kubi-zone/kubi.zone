@@ -233,7 +233,7 @@ async fn find_zone_nameserver_records(
 
 async fn update_zone_status(zone: Arc<Zone>, client: Client) -> Result<(), kube::Error> {
     let Some(origin) = zone.fqdn() else {
-        return Ok(())
+        return Ok(());
     };
 
     // Reference to this zone, which other zones and records will use to refer to it by.
