@@ -175,8 +175,6 @@ impl Zone {
             return false;
         }
 
-        //trace!("DELEGATIONS: {:#?}", self.spec().delegations);
-
         if self.spec().delegations.iter().any(|delegation| {
             delegation.covers_namespace(&record.namespace().unwrap_or_default())
                 && delegation.validate_record(
