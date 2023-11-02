@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::DefaultHasher, BTreeSet},
+    collections::{hash_map::DefaultHasher, VecDeque},
     hash::{Hash, Hasher},
     sync::Arc,
     time::Duration,
@@ -13,7 +13,7 @@ use kube::{
     Api, Client, ResourceExt,
 };
 use kubizone_crds::{
-    v1alpha1::{Record, Zone, ZoneRef},
+    v1alpha1::{Record, Zone, ZoneEntry, ZoneRef, ZoneSpec},
     PARENT_ZONE_LABEL,
 };
 
@@ -143,7 +143,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
         }
     }
 
-    update_zone_hash(zone, ctx.client.clone()).await?;
+    update_zone_status(zone, ctx.client.clone()).await?;
     Ok(Action::requeue(Duration::from_secs(300)))
 }
 
@@ -205,57 +205,141 @@ async fn set_zone_parent_ref(
     Ok(())
 }
 
-async fn update_zone_hash(zone: Arc<Zone>, client: Client) -> Result<(), kube::Error> {
-    let new_hash = {
-        // Reference to this zone, which other zones and records
-        // will use to refer to it by.
-        let zone_ref = ListParams::default().labels(&format!(
-            "{PARENT_ZONE_LABEL}={}",
-            zone.zone_ref().as_label()
-        ));
+async fn find_zone_nameserver_records(
+    zone: &Zone,
+    client: Client,
+) -> Result<impl Iterator<Item = ZoneEntry> + '_, kube::Error> {
+    // Reference to this zone, which other zones and records will use to refer to it by.
+    let zone_ref = ListParams::default().labels(&format!(
+        "{PARENT_ZONE_LABEL}={}",
+        zone.zone_ref().as_label()
+    ));
 
-        // Get a hash of the collective child zones and records and use
-        // as the basis for detecting change.
-        let child_zones: BTreeSet<_> = Api::<Zone>::all(client.clone())
-            .list(&zone_ref)
-            .await?
-            .into_iter()
-            .map(|zone| zone.spec)
-            .collect();
+    Ok(Api::<Record>::all(client.clone())
+        .list(&zone_ref)
+        .await?
+        .into_iter()
+        .map(|record| record.spec)
+        .filter(|spec| spec.type_.to_uppercase() == "NS" && spec.class.to_uppercase() == "IN")
+        .filter(|spec| spec.domain_name == "@" || Some(spec.domain_name.as_str()) == zone.fqdn())
+        .map(|spec| ZoneEntry {
+            domain_name: zone.spec.domain_name.clone(),
+            type_: spec.type_,
+            class: spec.class,
+            ttl: spec.ttl.unwrap_or(zone.spec.ttl),
+            rdata: spec.rdata,
+        }))
+}
 
-        let child_records: BTreeSet<_> = Api::<Record>::all(client.clone())
-            .list(&zone_ref)
-            .await?
-            .into_iter()
-            .map(|record| record.spec)
-            .collect();
-
-        let mut hasher = DefaultHasher::new();
-        (child_zones, child_records).hash(&mut hasher);
-
-        hasher.finish().to_string()
+async fn update_zone_status(zone: Arc<Zone>, client: Client) -> Result<(), kube::Error> {
+    let Some(origin) = zone.fqdn() else {
+        return Ok(())
     };
+
+    // Reference to this zone, which other zones and records will use to refer to it by.
+    let zone_ref = ListParams::default().labels(&format!(
+        "{PARENT_ZONE_LABEL}={}",
+        zone.zone_ref().as_label()
+    ));
+
+    // Using a VecDeque here because we want to push_front an SOA record
+    // after all other records have been hashed.
+    let mut entries = VecDeque::new();
+
+    // Insert all child records into the entries list
+    for record in Api::<Record>::all(client.clone())
+        .list(&zone_ref)
+        .await?
+        .into_iter()
+        .map(|record| record.spec)
+    {
+        entries.push_back(ZoneEntry {
+            domain_name: record.domain_name,
+            type_: record.type_,
+            class: record.class,
+            ttl: record.ttl.unwrap_or(zone.spec.ttl),
+            rdata: record.rdata,
+        })
+    }
+
+    // Create any NS records defined in the child zones, for their own domains.
+    // For example, with a top-level domain of `example.org.` and a subdomain of
+    // `subdomain.example.org.`, the subdomain might have NS-records like:
+    //
+    //      @ 360 IN NS ns.subdomain.example.org.
+    //
+    // Which also need to be represented in the parent zone, so delegation works
+    // without having to manually configure NS records in the parent.
+    for child_zone in Api::<Zone>::all(client.clone())
+        .list(&zone_ref)
+        .await?
+        .into_iter()
+    {
+        entries.extend(find_zone_nameserver_records(&child_zone, client.clone()).await?)
+    }
+
+    let mut hasher = DefaultHasher::new();
+    (&zone.spec, &entries).hash(&mut hasher);
+    let new_hash = hasher.finish().to_string();
 
     let current_hash = zone.status.as_ref().and_then(|status| status.hash.as_ref());
 
-    if current_hash != Some(&new_hash) {
-        info!(
-            "zone {}'s hash changed (before: {current_hash:?}, now: {new_hash})",
-            zone.name_any()
-        );
+    let last_serial = zone
+        .status
+        .as_ref()
+        .and_then(|status| status.serial)
+        .unwrap_or_default();
 
-        Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
-            .patch_status(
-                &zone.name_any(),
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Merge(json!({
-                    "status": {
-                        "hash": new_hash,
-                    },
-                })),
-            )
-            .await?;
-    }
+    // If the hash changed, we need to update the serial.
+    let serial = if current_hash != Some(&new_hash) {
+        info!("zone {zone}'s hash changed (before: {current_hash:?}, now: {new_hash}), updating serial.");
+        // Compute a serial based on the current datetime in UTC as per:
+        // https://datatracker.ietf.org/doc/html/rfc1912#section-2.2
+        let now = time::OffsetDateTime::now_utc();
+        #[rustfmt::skip]
+        let now_serial
+            = now.year()  as u32 * 1000000
+            + now.month() as u32 * 10000
+            + now.day()   as u32 * 100;
+
+        // If it's a new day, use YYYYMMDD00, otherwise just use the increment
+        // of the old serial.
+        std::cmp::max(now_serial, last_serial + 1)
+    } else {
+        last_serial
+    };
+
+    // Insert a SOA record at the beginning of the entry list.
+    let ZoneSpec {
+        ttl,
+        refresh,
+        retry,
+        expire,
+        negative_response_cache,
+        ..
+    } = zone.spec;
+
+    entries.push_front(ZoneEntry {
+        domain_name: origin.to_string(),
+        type_: "SOA".to_string(),
+        class: "IN".to_string(),
+        ttl,
+        rdata: format!("ns.{origin} noc.{origin} ({serial} {refresh} {retry} {expire} {negative_response_cache})"),
+    });
+
+    Api::<Zone>::namespaced(client, zone.namespace().as_ref().unwrap())
+        .patch_status(
+            &zone.name_any(),
+            &PatchParams::apply(CONTROLLER_NAME),
+            &Patch::Merge(json!({
+                "status": {
+                    "hash": new_hash,
+                    "entries": entries,
+                    "serial": Some(serial)
+                },
+            })),
+        )
+        .await?;
 
     Ok(())
 }

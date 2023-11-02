@@ -31,9 +31,6 @@ pub mod defaults {
     /// [^1]: <https://www.ripe.net/publications/docs/ripe-203>
     pub const NEGATIVE_RESPONSE_CACHE: u32 = 360;
 
-    /// Number of zonefile ConfigMaps to keep around.
-    pub const HISTORY: u32 = 10;
-
     // The functions below are only there for use with `serde(default)`.
     pub(super) const fn refresh() -> u32 {
         REFRESH
@@ -51,10 +48,6 @@ pub mod defaults {
 
     pub(super) const fn negative_response_cache() -> u32 {
         NEGATIVE_RESPONSE_CACHE
-    }
-
-    pub(super) const fn history() -> u32 {
-        HISTORY
     }
 }
 
@@ -77,6 +70,7 @@ pub mod defaults {
 #[kube(printcolumn = r#"{"name":"domain name", "jsonPath": ".spec.domainName", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"fqdn", "jsonPath": ".status.fqdn", "type": "string"}"#)]
 #[kube(printcolumn = r#"{"name":"hash", "jsonPath": ".status.hash", "type": "string"}"#)]
+#[kube(printcolumn = r#"{"name":"serial", "jsonPath": ".status.serial", "type": "string"}"#)]
 #[kube(
     printcolumn = r#"{"name":"parent", "jsonPath": ".metadata.labels.kubi\\.zone/parent-zone", "type": "string"}"#
 )]
@@ -85,7 +79,7 @@ pub struct ZoneSpec {
     pub domain_name: String,
 
     /// Optional reference to a parent zone which this zone is a sub-zone of.
-    /// 
+    ///
     /// Zones must have *either* a zoneRef, or end in a '.', making it a fully
     /// qualified domain name. It cannot have both.
     pub zone_ref: Option<ZoneRef>,
@@ -93,13 +87,6 @@ pub struct ZoneSpec {
     /// List of namespaced records and zones which are allowed to "insert"
     /// themselves into this zone. See the [`Delegation`] type for more information.
     pub delegations: Vec<Delegation>,
-
-    /// Number of zonefile revisions to keep around in the form of ConfigMaps.
-    ///
-    /// If more than N ConfigMaps exist, which are descendents of this ZoneFile,
-    /// then delete the oldest (lowest revision) ones, until N <= history.
-    #[serde(default = "defaults::history")]
-    pub history: u32,
 
     /// Time-to-Live. Represents how long (in seconds) recursive resolvers should
     /// keep this record in their cache.
@@ -243,18 +230,21 @@ impl Display for Zone {
 #[derive(Default, Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneStatus {
+    #[serde(default)]
     pub entries: Vec<ZoneEntry>,
 
     /// Zones fully qualified domain name.
-    /// 
+    ///
     /// If the `.spec.domainName` is already fully qualified, these are identical.
-    /// 
+    ///
     /// If instead the Zone uses a `.spec.zoneRef` to indicate its parent,
     /// this will be the concatenated version of this zone's `.spec.domainName`
     /// and the parent's `.status.fqdn`
+    #[serde(default)]
     pub fqdn: Option<String>,
 
     /// Hash value of all relevant zone entries.
+    #[serde(default)]
     pub hash: Option<String>,
 
     /// Serial of the latest generated zonefile.
@@ -262,6 +252,7 @@ pub struct ZoneStatus {
     /// The controller will automatically increment this value
     /// whenever the zone changes, in accordance with
     /// [RFC 1912](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2)
+    #[serde(default)]
     pub serial: Option<u32>,
 }
 

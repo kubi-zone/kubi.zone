@@ -23,6 +23,9 @@ default:
         kubizone ./charts/kubizone              \
         && kubectl delete pods -n kubizone --all
 
+@uninstall:
+    helm -n kubizone uninstall kubizone
+
 @test:
     kubectl -n kubizone delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true
     kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
