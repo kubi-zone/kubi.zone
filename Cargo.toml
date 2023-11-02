@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "kubizone-crds",
+    "kubizone/crds",
     "kubizone",
-    "kubizone-zonefile-crds",
-    "kubizone-zonefile",
-    "kubizone-crd-utils"
+    "zonefile/crds",
+    "zonefile",
+    "crd-utils"
 ]
