@@ -2,6 +2,8 @@
 kubizone_version := `cat kubizone/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
 zonefile_version := `cat kubizone-zonefile/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
 
+namespace := "kubizone"
+
 default:
     just --list
 
@@ -14,28 +16,33 @@ default:
 @publish-all: (publish "kubizone") (publish "zonefile")
 
 @install zonefile="false" recreate="false":
-    helm -n kubizone upgrade --install          \
+    helm -n {{namespace}} upgrade --install          \
         --set kubizone.image.tag=dev            \
         --set zonefile.image.tag=dev            \
         --set zonefile.enable={{zonefile}}      \
         --set dangerRecreateCrds={{recreate}}   \
         --set image.pullPolicy=Always           \
         kubizone ./charts/kubizone              \
-        && kubectl delete pods -n kubizone --all
+        && kubectl delete pods -n {{namespace}} --all
 
 @uninstall:
-    helm -n kubizone uninstall kubizone
+    helm -n {{namespace}} uninstall kubizone
 
 @test:
-    kubectl -n kubizone delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true
-    kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
-    #kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
+    kubectl -n {{namespace}} delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true
+    kubectl -n {{namespace}} apply -f kubizone-zonefile/examples/simple-zonefile.yaml
+    #kubectl -n {{namespace}} get pods -o name | grep kubizone | xargs -n1 kubectl -n {{namespace}} delete
 
-dump-crds:
+@clean:
+    helm -n {{namespace}} uninstall kubizone || true
+    kubectl -n {{namespace}} delete zones --all
+    kubectl -n {{namespace}} delete records --all
+
+@dump-crds:
     cargo run --bin kubizone-zonefile -- dump-crds crds
     cargo run --bin kubizone -- dump-crds crds
 
-danger-recreate-crds:
+@danger-recreate-crds:
     cargo run --bin kubizone-zonefile -- danger-recreate-crds
     cargo run --bin kubizone -- danger-recreate-crds
 

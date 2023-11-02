@@ -1,10 +1,10 @@
 use futures::StreamExt;
-use kubizone_crds::v1alpha1::{Record, RecordSpec, Zone};
-use kubizone_zonefile_crds::{ZoneFile, ZoneFileSpec, TARGET_ZONEFILE_LABEL};
+use kubizone_crds::v1alpha1::{Zone, ZoneEntry};
+use kubizone_zonefile_crds::{ZoneFile, TARGET_ZONEFILE_LABEL};
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
 use kube::{
-    api::{ListParams, Patch, PatchParams},
+    api::{Patch, PatchParams},
     core::ObjectMeta,
     runtime::{controller::Action, watcher, Controller},
     Api, Client, Resource, ResourceExt,
@@ -17,115 +17,41 @@ struct Data {
 }
 
 pub const CONTROLLER_NAME: &str = "kubi.zone/zonefile";
-use kubizone_crds::PARENT_ZONE_LABEL;
 
-/// Builds the actual [zone file](https://datatracker.ietf.org/doc/html/rfc1035#section-5)
-/// based on [`Record`]s and [`Zone`]s pointing to the [`Zone`] referenced by [`ZoneFile`].
-async fn build_zonefile(
-    client: Client,
-    zonefile: &ZoneFile,
-    origin: &str,
-    serial: u32,
-) -> Result<String, kube::Error> {
-    let label = format!("{PARENT_ZONE_LABEL}={}", zonefile.zone_ref().as_label());
-    debug!("generating zone by finding records matching {label}");
-    let zone_ref = ListParams::default().labels(&label);
-
-    // TODO: Implement sub-zone building, by either listing namservers
-    // (if any), or including the zone's records directly.
-
-    // Suffix of the origin, with a '.' in front.
-    // We remove suffixes matching this from all records in order to
-    // simplify the output zonefiles, as the origin is assumed.
-    let origin_suffix = &format!(".{origin}");
-
-    // Transform the record FQDNs into zone-dependent domain names,
-    // without the .origin suffix (see above).
-    //
-    // For example, in the zone "example.org.", the following
-    // transformations will take place:
-    //   www.example.org. => www
-    //   ftp.users.example.org. => ftp.users
-    let mut records: Vec<_> = Api::<Record>::all(client.clone())
-        .list(&zone_ref)
-        .await?
-        .into_iter()
-        .map(|record| {
-            let shortened_name = record
-                .spec
-                .domain_name
-                .strip_suffix(origin_suffix)
-                .unwrap_or(&record.spec.domain_name)
-                .to_string();
-
-            (shortened_name, record)
-        })
-        .collect();
-
-    // Sort the zones by *reversed* fqdn in *reverse* order, putting the longer fqdns on top.
-    //
-    // Reversing the fqdns sorts by domain suffix.
-    //
-    // Reversing the order puts the longer domains first, letting us use `Iterator::find`
-    // to get the longest matching suffix.
-    records.sort_by(|(a, _), (b, _)| {
-        b.chars()
-            .rev()
-            .collect::<Vec<_>>()
-            .cmp(&a.chars().rev().collect())
-    });
-
+fn build_zonefile(origin: &str, entries: &[ZoneEntry]) -> String {
     // We use the longest domain name in the list for
     // aligning the text in the output zonefile
-    let longest_name = records
+    let longest_name_length = entries
         .iter()
-        .map(|(name, _)| name.len())
+        .map(|entry| entry.fqdn.len())
         .max()
         .unwrap_or_default();
 
-    let serialized_records = records
-        .into_iter()
-        .map(|(name, record)| {
-            let RecordSpec {
-                type_,
-                class,
-                ttl,
-                rdata,
-                ..
-            } = record.spec;
+    let origin_suffix = format!(".{origin}");
 
-            format!(
-                "{name:<width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
-                width = longest_name,
-                ttl = ttl.unwrap_or(zonefile.spec.ttl)
-            )
-        })
+    let serialized_records = entries
+        .iter()
+        .map(
+            |ZoneEntry {
+                 fqdn,
+                 type_,
+                 class,
+                 ttl,
+                 rdata,
+                 ..
+             }| {
+                let fqdn = fqdn.strip_suffix(&origin_suffix).unwrap_or(fqdn);
+
+                format!(
+                    "{fqdn:<width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
+                    width = longest_name_length
+                )
+            },
+        )
         .collect::<Vec<_>>()
         .join("\n");
 
-    let ZoneFileSpec {
-        refresh,
-        retry,
-        expire,
-        negative_response_cache,
-        ..
-    } = &zonefile.spec;
-
-    let zone = indoc::formatdoc! {"
-        $ORIGIN {origin}
-
-        {origin} IN SOA ns.{origin} noc.{origin} (
-            {serial}
-            {refresh}
-            {retry}
-            {expire}
-            {negative_response_cache}
-        )
-
-        {serialized_records}
-    "};
-
-    Ok(zone)
+    format!("$ORIGIN {origin}\n\n{serialized_records}")
 }
 
 /// Applied a [`TARGET_ZONEFILE_LABEL`] label which references our zonefile.
@@ -187,98 +113,65 @@ async fn reconcile_zonefiles(
 
     apply_zonefile_backref(ctx.client.clone(), &zonefile, &zone).await?;
 
-    let Some(zone_hash) = zone.status.as_ref().and_then(|zone| zone.hash.as_ref()) else {
-        debug!(
-            "zone {} has not yet computed its hash, requeuing",
-            zone.name_any()
-        );
+    let Some(origin) = zone.fqdn() else {
+        debug!("zone {zone} has no fqdn requeuing");
+        return Ok(Action::requeue(Duration::from_secs(30)));
+    };
+
+    let Some(hash) = zone.hash() else {
+        debug!("zone {zone} has not computed its hash yet, requeuing");
         return Ok(Action::requeue(Duration::from_secs(5)));
     };
 
-    let last_hash = zonefile
-        .status
+    let Some(serial) = zone.serial() else {
+        debug!("zone {zone} has not produced a serial yet, requeuing");
+        return Ok(Action::requeue(Duration::from_secs(5)));
+    };
+
+    let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
+    let configmap_name = zonefile
+        .spec
+        .config_map_name
         .as_ref()
-        .and_then(|status| status.hash.as_ref());
+        .cloned()
+        .unwrap_or(zonefile.name_any());
 
-    if last_hash != Some(zone_hash) {
-        let last_serial = zonefile
-            .status
-            .as_ref()
-            .and_then(|status| status.serial)
-            .unwrap_or_default();
+    let config_map = ConfigMap {
+        metadata: ObjectMeta {
+            name: Some(configmap_name.clone()),
+            namespace: zonefile.namespace(),
+            owner_references: Some(vec![owner_reference]),
+            ..ObjectMeta::default()
+        },
+        data: Some(BTreeMap::from([(
+            origin.trim_end_matches('.').to_string(),
+            build_zonefile(origin, &zone.status.as_ref().unwrap().entries),
+        )])),
+        ..Default::default()
+    };
 
-        info!(
-            "zone {}'s hash is not equal to zonefile {}'s ({zone_hash} != {last_hash:?}), regenerating configmap and rotating serial.",
-            zone.name_any(),
-            zonefile.name_any(),
-        );
+    Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
+        .patch(
+            &configmap_name,
+            &PatchParams::apply(CONTROLLER_NAME),
+            &Patch::Apply(config_map),
+        )
+        .await?;
 
-        // Compute a serial based on the current datetime in UTC as per:
-        // https://datatracker.ietf.org/doc/html/rfc1912#section-2.2
-        let now = time::OffsetDateTime::now_utc();
-        #[rustfmt::skip]
-        let now_serial
-            = now.year()  as u32 * 1000000
-            + now.month() as u32 * 10000
-            + now.day()   as u32 * 100;
+    Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
+        .patch_status(
+            &zonefile.name_any(),
+            &PatchParams::apply(CONTROLLER_NAME),
+            &Patch::Merge(json!({
+                "status": {
+                    "hash": hash,
+                    "serial": serial,
+                },
+            })),
+        )
+        .await?;
 
-        // If it's a new day, use YYYYMMDD00, otherwise just use the increment
-        // of the old serial.
-        let next_serial = std::cmp::max(now_serial, last_serial + 1);
-
-        let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
-
-        let configmap_name = format!("{}-{next_serial}", zonefile.name_any());
-
-        let config_map = ConfigMap {
-            metadata: ObjectMeta {
-                name: Some(configmap_name.clone()),
-                namespace: zonefile.namespace(),
-                owner_references: Some(vec![owner_reference]),
-                ..ObjectMeta::default()
-            },
-            data: Some(BTreeMap::from([(
-                "zonefile".to_string(),
-                build_zonefile(
-                    ctx.client.clone(),
-                    &zonefile,
-                    &zone.spec.domain_name,
-                    next_serial,
-                )
-                .await?,
-            )])),
-            ..Default::default()
-        };
-
-        Api::<ConfigMap>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
-            .patch(
-                &configmap_name,
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Apply(config_map),
-            )
-            .await?;
-
-        info!(
-            "updating zone {}'s serial (before: {last_serial}, now: {next_serial})",
-            zone.name_any()
-        );
-
-        Api::<ZoneFile>::namespaced(ctx.client.clone(), zonefile.namespace().as_ref().unwrap())
-            .patch_status(
-                &zonefile.name_any(),
-                &PatchParams::apply(CONTROLLER_NAME),
-                &Patch::Merge(json!({
-                    "status": {
-                        "hash": zone_hash,
-                        "serial": next_serial,
-                        "configMap": configmap_name
-                    },
-                })),
-            )
-            .await?;
-    }
-
-    Ok(Action::requeue(Duration::from_secs(30)))
+    Ok(Action::requeue(Duration::from_secs(300)))
 }
 
 fn zonefile_error_policy(zone: Arc<ZoneFile>, error: &kube::Error, _ctx: Arc<Data>) -> Action {

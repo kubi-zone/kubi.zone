@@ -23,6 +23,9 @@ spec:
     - jsonPath: .status.hash
       name: hash
       type: string
+    - jsonPath: .status.serial
+      name: serial
+      type: string
     - jsonPath: .metadata.labels.kubi\.zone/parent-zone
       name: parent
       type: string
@@ -34,6 +37,7 @@ spec:
           spec:
             properties:
               delegations:
+                description: List of namespaced records and zones which are allowed to "insert" themselves into this zone. See the [`Delegation`] type for more information.
                 items:
                   properties:
                     namespaces:
@@ -67,7 +71,67 @@ spec:
                 type: array
               domainName:
                 type: string
+              expire:
+                default: 3600000
+                description: |-
+                  Number of seconds after which secondary name servers should stop answering request for this zone if the master does not respond.
+
+                  This value must be bigger than the sum of Refresh and Retry.
+
+                  Recommendation for small and stable zones[^1]: 3600000 seconds (1000 hours)
+
+                  [^1]: <https://www.ripe.net/publications/docs/ripe-203>
+                format: uint32
+                minimum: 0.0
+                type: integer
+              negativeResponseCache:
+                default: 360
+                description: |-
+                  Used in calculating the time to live for purposes of negative caching. Authoritative name servers take the smaller of the SOA TTL and this value to send as the SOA TTL in negative responses.
+
+                  Resolvers use the resulting SOA TTL to understand for how long they are allowed to cache a negative response.
+
+                  Recommendation for small and stable zones[^1] 172800 seconds (2 days)
+
+                  [^1]: <https://www.ripe.net/publications/docs/ripe-203>
+                format: uint32
+                minimum: 0.0
+                type: integer
+              refresh:
+                default: 86400
+                description: |-
+                  Number of seconds after which secondary name servers should query the master for the SOA record, to detect zone changes.
+
+                  Recommendation for small and stable zones[^1]: 86400 seconds (24 hours).
+
+                  [^1]: <https://www.ripe.net/publications/docs/ripe-203>
+                format: uint32
+                minimum: 0.0
+                type: integer
+              retry:
+                default: 7200
+                description: |-
+                  Number of seconds after which secondary name servers should retry to request the serial number from the master if the master does not respond.
+
+                  It must be less than Refresh.
+
+                  Recommendation for small and stable zones[^1]: 7200 seconds (2 hours).
+
+                  [^1]: <https://www.ripe.net/publications/docs/ripe-203>
+                format: uint32
+                minimum: 0.0
+                type: integer
+              ttl:
+                default: 360
+                description: Time-to-Live. Represents how long (in seconds) recursive resolvers should keep this record in their cache.
+                format: uint32
+                minimum: 0.0
+                type: integer
               zoneRef:
+                description: |-
+                  Optional reference to a parent zone which this zone is a sub-zone of.
+
+                  Zones must have *either* a zoneRef, or end in a '.', making it a fully qualified domain name. It cannot have both.
                 nullable: true
                 properties:
                   name:
@@ -85,12 +149,52 @@ spec:
           status:
             nullable: true
             properties:
+              entries:
+                default: []
+                items:
+                  properties:
+                    class:
+                      type: string
+                    fqdn:
+                      type: string
+                    rdata:
+                      type: string
+                    ttl:
+                      format: uint32
+                      minimum: 0.0
+                      type: integer
+                    type:
+                      type: string
+                  required:
+                  - class
+                  - fqdn
+                  - rdata
+                  - ttl
+                  - type
+                  type: object
+                type: array
               fqdn:
+                description: |-
+                  Zones fully qualified domain name.
+
+                  If the `.spec.domainName` is already fully qualified, these are identical.
+
+                  If instead the Zone uses a `.spec.zoneRef` to indicate its parent, this will be the concatenated version of this zone's `.spec.domainName` and the parent's `.status.fqdn`
                 nullable: true
                 type: string
               hash:
+                description: Hash value of all relevant zone entries.
                 nullable: true
                 type: string
+              serial:
+                description: |-
+                  Serial of the latest generated zonefile.
+
+                  The controller will automatically increment this value whenever the zone changes, in accordance with [RFC 1912](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2)
+                format: uint32
+                minimum: 0.0
+                nullable: true
+                type: integer
             type: object
         required:
         - spec

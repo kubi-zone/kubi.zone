@@ -30,7 +30,7 @@ spec:
   type: A
   rdata: "192.168.0.2"
 ---
-apiVersion: zonefile.kubi.zone/v1alpha1
+apiVersion: kubi.zone/v1alpha1
 kind: ZoneFile
 metadata:
   name: example

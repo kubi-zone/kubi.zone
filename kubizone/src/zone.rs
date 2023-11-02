@@ -225,7 +225,7 @@ async fn find_zone_nameserver_records(
         .filter(|spec| spec.type_.to_uppercase() == "NS")
         .filter(|spec| spec.domain_name == "@" || Some(spec.domain_name.as_str()) == zone.fqdn())
         .map(|spec| ZoneEntry {
-            domain_name: zone.spec.domain_name.clone(),
+            fqdn: zone.spec.domain_name.clone(),
             type_: spec.type_.clone(),
             class: spec.class.clone(),
             ttl: spec.ttl.unwrap_or(zone.spec.ttl),
@@ -250,7 +250,7 @@ async fn find_zone_nameserver_records(
                 .any(|ns| Some(ns.rdata.as_str()) == record.fqdn())
         })
         .map(|record| ZoneEntry {
-            domain_name: record.fqdn().unwrap().to_string(),
+            fqdn: record.fqdn().unwrap().to_string(),
             type_: record.spec.type_.clone(),
             class: record.spec.class.clone(),
             ttl: record.spec.ttl.unwrap_or(zone.spec.ttl),
@@ -285,7 +285,7 @@ async fn update_zone_status(zone: Arc<Zone>, client: Client) -> Result<(), kube:
         .map(|record| record.spec)
     {
         entries.push_back(ZoneEntry {
-            domain_name: record.domain_name,
+            fqdn: record.domain_name,
             type_: record.type_,
             class: record.class,
             ttl: record.ttl.unwrap_or(zone.spec.ttl),
@@ -351,7 +351,7 @@ async fn update_zone_status(zone: Arc<Zone>, client: Client) -> Result<(), kube:
     } = zone.spec;
 
     entries.push_front(ZoneEntry {
-        domain_name: origin.to_string(),
+        fqdn: origin.to_string(),
         type_: "SOA".to_string(),
         class: "IN".to_string(),
         ttl,

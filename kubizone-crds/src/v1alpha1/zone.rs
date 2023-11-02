@@ -155,6 +155,16 @@ impl Zone {
             .and_then(|status| status.fqdn.as_deref())
     }
 
+    pub fn hash(&self) -> Option<&str> {
+        self.status
+            .as_ref()
+            .and_then(|status| status.hash.as_deref())
+    }
+
+    pub fn serial(&self) -> Option<u32> {
+        self.status.as_ref().and_then(|status| status.serial)
+    }
+
     /// Validate that the given Record is allowed, given the delegations of this Zone.
     pub fn validate_record(&self, record: &Record) -> bool {
         let Some(parent_fqdn) = self.fqdn() else {
@@ -261,7 +271,7 @@ pub struct ZoneStatus {
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoneEntry {
-    pub domain_name: String,
+    pub fqdn: String,
     #[serde(rename = "type")]
     pub type_: String,
     pub class: String,
