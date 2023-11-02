@@ -14,33 +14,13 @@ toc = true
 top = false
 +++
 
-The latest version of the `DNSRecord`'s Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/Record.yaml)
+The latest version of the `Record`'s Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/Record.yaml)
 
 ## What is a DNS Record?
 A [DNS Record](https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records) is a single named entry within a zone.
 
-## Spec
-A DNS Record `.spec` is made up of the following required fields:
-
-* `domainName`
-* `type`
-* `rdata`
-
-and in cases where `domainName` does not contain a fully qualified domain name:
-
-* `zoneRef`.
-
-The `domainName` of the record can either be a fully qualified domain name such as `www.example.org.` (notice the trailing dot),
-or a relative name such as `www` or `www.subdomain`, in which case a `zoneRef` must also be specified indicating the parent [Zone](../custom-resources/zone.md)
-the record is relative to.
-
-The record `type` can be any which is [supported](https://en.wikipedia.org/wiki/List_of_DNS_record_types) by the domain name system, such as `A`, `AAAA`, `CNAME`, `MX`, etc..
-
-`rdata` contains the *value* of the record. For `A`-records, this would be your IPv4 address such as `"127.0.0.1"`, for an `MX` record,
-it would be the preference followed by the exchange: `"10 mx01.example.org"`.
-
 ## Examples
-A fully qualified DNS record:
+**A fully qualified DNS record:**
 ```yaml
 apiVersion: kubi.zone/v1alpha1
 kind: Record
@@ -51,36 +31,75 @@ spec:
   type: A
   rdata: "192.168.0.2"
 ```
-Since no parent zone is defined, the [Kubizone controller](../controllers/kubizone.md) will attempt to deduce the parent zone based
-on the `domainName`. If no zone is found which matches any of the potential parent domains (`subdomain.example.org.`, `example.org.`, `org.`),
-the record will effectively be an orphan.
+On its own this `Record` won't be very useful, but assuming a [Zone](../zones/) matching the record's
+fully qualified `domainName`, which allows delegation of this domain name exists, the record will be
+incorporated into it, and from there be consumed by downstream providers.
 
-A relative DNS Record:
+---
+
+**A partial record, referencing a parent zone by name:**
 ```yaml
 apiVersion: kubi.zone/v1alpha1
 kind: Record
 metadata:
-  name: www-subdomain-example-org
+  name: www-subdomain-root
 spec:
   domainName: www.subdomain
-  type: A
-  rdata: "192.168.0.2"
   zoneRef:
-    name: example-org
+    name: root-zone
+  type: A
+  rdata: "192.168.0.1s"
 ```
-The above example references a Zone by the name `example-org` in the same namespace, which may be defined as:
+Using partial domain names and a `zoneRef` instead of fully qualified ones, allows you to change
+the top-level domain without editing the `domainName` across all records, or to define records
+without knowledge of the super-zone. This is useful for deployments of application where only
+the relative subdomain is relevant, such as `static.<mydomain>` or `blog.<top-domain>`.
+
+---
+Both of the above examples assumes the presence of a zone _like_ the one defined below. Note that the zone explicitly allows delegation of the `www.subdomain` domain
+to _any_ record by not imposing limits on the namespace, class or type of the record.
 ```yaml
 apiVersion: kubi.zone/v1alpha1
 kind: Zone
 metadata:
-  name: example-org
+  name: root-zone
 spec:
   domainName: example.org.
+  delegations:
+  - records:
+    - pattern: ["*.subdomain.example.org."]
 ```
-Applying the above and listing the records, the Kubizone controller will have deduced the FQDN as follows:
 
-```bash
-$ kubectl get records
-NAME                        DOMAIN NAME     CLASS   TYPE    DATA               FQDN                         PARENT
-www-subdomain-example-org   www.subdomain   IN      A       192.168.0.2        www.subdomain.example.org.   example-org.kubizone
-```
+## Specification
+The `Record`'s `.spec` field is made up of the following fields:
+
+### `.spec.domainName`
+Either a fully-qualified domain name such as `www.example.org.` (notice the trailing dot), _or_
+a partial domain name (the name is only a partial name, such as the `www` in `www.example.org.`) in
+which case the `.spec.zoneRef` field must be populated.
+
+If using a fully qualified domain name, the [Kubizone operator](../../operators/kubizone/) will
+automatically attempt to deduce which parent [Zone](../zones/) the record belongs to, favoring
+the longest matching parent domain name.
+
+Regardless of the domain name type, the operator will respect the parent zone delegations.
+
+### `.spec.type`
+Type of record. See a list [here](https://en.wikipedia.org/wiki/List_of_DNS_record_types) for examples.
+
+No validation is performed on this field, limitations are only imposed by downstream providers.
+
+### `.spec.rdata`
+Contents of the record. In the case of `A` records, this will be the IP address.
+
+In the case of an `NS` record, this will be the hostname of the nameserver.
+
+For `MX` it will be the preference and exchange expressed as a string, e.g.: `10 mail.protonmail.ch.`
+
+---
+
+### `.spec.ttl`
+Time-to-live for the record. If none is set the parent zone's default will be used, which in turn defaults to `360` seconds.
+
+### `.spec.class`
+Can also be set, but defaults to `IN`.
