@@ -58,3 +58,7 @@ default:
         ]                                           \
     }' | helm -f - -n {{namespace}} {{action}}      \
         zonefile-coredns ./charts/zonefile-coredns
+
+@docs:
+    sleep 1 && xdg-open http://localhost:1111 &
+    docker run --rm -it -p 1111:1111 -v $(pwd)/website:/app --workdir=/app ghcr.io/getzola/zola:v0.17.2 serve --interface=0.0.0.0
