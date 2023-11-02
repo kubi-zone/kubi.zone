@@ -72,7 +72,6 @@ spec:
 
 ## Specification
 The `Record`'s `.spec` field is made up of the following fields:
-
 ### `.spec.domainName`
 Either a fully-qualified domain name such as `www.example.org.` (notice the trailing dot), _or_
 a partial domain name (the name is only a partial name, such as the `www` in `www.example.org.`) in
