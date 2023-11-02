@@ -57,6 +57,11 @@ spec:
     name: example-org
   delegations:
     - zones: ["www.subdomain.example.org."]
+    - records:
+        - pattern: "ns*.subdomain.example.org"
+          types: ["A"]
+        - pattern: "subdomain.example.org"
+          types: ["NS"]
 ---
 apiVersion: kubi.zone/v1alpha1
 kind: Record
@@ -66,3 +71,39 @@ spec:
   domainName: www.subdomain.example.org.
   type: A
   rdata: "192.168.0.2"
+---
+apiVersion: kubi.zone/v1alpha1
+kind: Record
+metadata:
+  name: ns1-subdomain-example-org
+spec:
+  domainName: ns1.subdomain.example.org.
+  type: A
+  rdata: "192.168.0.10"
+---
+apiVersion: kubi.zone/v1alpha1
+kind: Record
+metadata:
+  name: ns2-subdomain-example-org
+spec:
+  domainName: ns2.subdomain.example.org.
+  type: A
+  rdata: "192.168.0.11"
+---
+apiVersion: kubi.zone/v1alpha1
+kind: Record
+metadata:
+  name: ns-ns1-subdomain-example-org
+spec:
+  domainName: subdomain.example.org.
+  type: NS
+  rdata: ns1.subdomain.example.org.
+---
+apiVersion: kubi.zone/v1alpha1
+kind: Record
+metadata:
+  name: ns-ns2-subdomain-example-org
+spec:
+  domainName: subdomain.example.org.
+  type: NS
+  rdata: ns2.subdomain.example.org.

@@ -29,7 +29,7 @@ default:
 @test:
     kubectl -n kubizone delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true
     kubectl -n kubizone apply -f kubizone-zonefile/examples/simple-zonefile.yaml
-    kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
+    #kubectl -n kubizone get pods -o name | grep kubizone | xargs -n1 kubectl -n kubizone delete
 
 dump-crds:
     cargo run --bin kubizone-zonefile -- dump-crds crds
