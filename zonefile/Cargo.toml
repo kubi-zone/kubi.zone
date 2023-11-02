@@ -1,29 +1,27 @@
 [package]
-name = "kubizone-zonefile"
+name = "zonefile"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Kubizone
+kubizone-crds = { workspace = true }
+zonefile-crds = { workspace = true }
+crd-utils = { workspace = true }
+
 # Utilities
-tracing = "0.1.37"
-tracing-subscriber = "0.3.17"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 # Kubernetes
-kubizone-crds = { path = "../kubizone/crds" }
-kubizone-zonefile-crds = { path = "crds" }
-kube = { version = "0.83.0", default-features = false, features = ["derive", "rustls-tls", "client", "runtime"] }
-k8s-openapi = { version = "0.18.0", features = ["v1_25"] }
+kube = { workspace = true }
+k8s-openapi = { workspace = true }
 
 # Async
-tokio = { version = "1.28.2", features = ["macros", "rt"] }
-futures = "0.3.17"
-
-# Zonefile formatting
-indoc = { version = "2.0.1" }
-time = "0.3.20"
+tokio = { workspace = true }
+futures = { workspace = true }
 
 # CLI
-clap = { version = "4.3.10", features = ["derive"]}
-kubizone-crd-utils = { path = "../crd-utils" }
+clap = { workspace = true }

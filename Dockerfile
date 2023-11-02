@@ -36,10 +36,10 @@ ARG UID=65203
 ARG GID=65203
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/passwd /etc/passwd
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/group /etc/group
-COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone /kubizone/kubizone
+COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone /app/kubizone
 USER ${UID}:${GID}
 
-ENTRYPOINT ["/kubizone/kubizone"]
+ENTRYPOINT ["/app/kubizone"]
 CMD ["print-crds"]
 
 FROM scratch AS zonefile
@@ -48,8 +48,8 @@ ARG UID=65203
 ARG GID=65203
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/passwd /etc/passwd
 COPY --from=builder --chown=${UID}:${GID} --chmod=0440 /etc/group /etc/group
-COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/kubizone-zonefile /kubizone/zonefile
+COPY --from=builder --chown=${UID}:${GID} --chmod=0550 /usr/local/bin/zonefile /app/zonefile
 USER ${UID}:${GID}
 
-ENTRYPOINT ["/kubizone/zonefile"]
+ENTRYPOINT ["/app/zonefile"]
 CMD ["print-crds"]

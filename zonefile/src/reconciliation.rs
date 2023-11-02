@@ -1,6 +1,6 @@
 use futures::StreamExt;
 use kubizone_crds::v1alpha1::{Zone, ZoneEntry};
-use kubizone_zonefile_crds::{ZoneFile, TARGET_ZONEFILE_LABEL};
+use zonefile_crds::{ZoneFile, TARGET_ZONEFILE_LABEL};
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
 use kube::{

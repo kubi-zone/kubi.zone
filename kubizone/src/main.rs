@@ -36,20 +36,20 @@ async fn main() {
 
     match args.command {
         Command::PrintCrds => {
-            println!("{}", kubizone_crd_utils::serialize_crd::<Zone>().unwrap());
-            println!("{}", kubizone_crd_utils::serialize_crd::<Record>().unwrap());
+            println!("{}", crd_utils::serialize_crd::<Zone>().unwrap());
+            println!("{}", crd_utils::serialize_crd::<Record>().unwrap());
         }
         Command::DumpCrds { path } => {
-            kubizone_crd_utils::write_to_path::<Zone>(&path).unwrap();
-            kubizone_crd_utils::write_to_path::<Record>(&path).unwrap();
+            crd_utils::write_to_path::<Zone>(&path).unwrap();
+            crd_utils::write_to_path::<Record>(&path).unwrap();
         }
         Command::DangerRecreateCrds => {
             let client = Client::try_default().await.unwrap();
 
             warn!("action danger-recreate-crds chosen, deleting Zone and Record CRDs from cluster, and recreating. This will delete all existing Records and Zones!");
             let api: Api<CustomResourceDefinition> = Api::all(client.clone());
-            kubizone_crd_utils::recreate_crd_destructively::<Zone>(api.clone()).await;
-            kubizone_crd_utils::recreate_crd_destructively::<Record>(api.clone()).await;
+            crd_utils::recreate_crd_destructively::<Zone>(api.clone()).await;
+            crd_utils::recreate_crd_destructively::<Record>(api.clone()).await;
         }
         Command::Reconcile {
             danger_recreate_crds,
@@ -59,8 +59,8 @@ async fn main() {
             if danger_recreate_crds {
                 warn!("flag --danger-recreate-crds set, deleting Zone and Record CRDs from cluster, and recreating. This will delete all existing Records and Zones!");
                 let api: Api<CustomResourceDefinition> = Api::all(client.clone());
-                kubizone_crd_utils::recreate_crd_destructively::<Zone>(api.clone()).await;
-                kubizone_crd_utils::recreate_crd_destructively::<Record>(api.clone()).await;
+                crd_utils::recreate_crd_destructively::<Zone>(api.clone()).await;
+                crd_utils::recreate_crd_destructively::<Record>(api.clone()).await;
             }
 
             tokio::select! {

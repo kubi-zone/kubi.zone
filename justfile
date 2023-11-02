@@ -1,6 +1,6 @@
 #!/usr/bin/env just
 kubizone_version := `cat kubizone/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
-zonefile_version := `cat kubizone-zonefile/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
+zonefile_version := `cat zonefile/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'`
 
 namespace := "kubizone"
 
@@ -29,8 +29,8 @@ default:
     helm -n {{namespace}} uninstall kubizone
 
 @test:
-    kubectl -n {{namespace}} delete -f kubizone-zonefile/examples/simple-zonefile.yaml || true
-    kubectl -n {{namespace}} apply -f kubizone-zonefile/examples/simple-zonefile.yaml
+    kubectl -n {{namespace}} delete -f zonefile/examples/simple-zonefile.yaml || true
+    kubectl -n {{namespace}} apply -f zonefile/examples/simple-zonefile.yaml
     #kubectl -n {{namespace}} get pods -o name | grep kubizone | xargs -n1 kubectl -n {{namespace}} delete
 
 @clean:
@@ -39,11 +39,11 @@ default:
     kubectl -n {{namespace}} delete records --all
 
 @dump-crds:
-    cargo run --bin kubizone-zonefile -- dump-crds crds
+    cargo run --bin zonefile -- dump-crds crds
     cargo run --bin kubizone -- dump-crds crds
 
 @danger-recreate-crds:
-    cargo run --bin kubizone-zonefile -- danger-recreate-crds
+    cargo run --bin zonefile -- danger-recreate-crds
     cargo run --bin kubizone -- danger-recreate-crds
 
 @install-coredns action="upgrade --install":
