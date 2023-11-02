@@ -39,6 +39,14 @@ spec:
     name: example-org
 ---
 apiVersion: kubi.zone/v1alpha1
+kind: ZoneFile
+metadata:
+  name: subdomain
+spec:
+  zoneRef:
+    name: subdomain-example-org
+---
+apiVersion: kubi.zone/v1alpha1
 kind: Record
 metadata:
   name: www2-example-org
