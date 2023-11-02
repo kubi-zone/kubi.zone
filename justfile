@@ -16,14 +16,13 @@ default:
 @publish-all: (publish "kubizone") (publish "zonefile")
 
 @install zonefile="false" recreate="false":
-    helm -n {{namespace}} upgrade --install          \
+    helm -n {{namespace}} upgrade --install     \
         --set kubizone.image.tag=dev            \
         --set zonefile.image.tag=dev            \
         --set zonefile.enable={{zonefile}}      \
         --set dangerRecreateCrds={{recreate}}   \
         --set image.pullPolicy=Always           \
-        kubizone ./charts/kubizone              \
-        && kubectl delete pods -n {{namespace}} --all
+        kubizone ./charts/kubizone
 
 @uninstall:
     helm -n {{namespace}} uninstall kubizone
