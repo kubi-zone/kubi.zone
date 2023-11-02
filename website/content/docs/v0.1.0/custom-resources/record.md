@@ -1,6 +1,6 @@
 +++
-title = "DNSRecord"
-description = "A DNSRecord represents a single DNS entry within a zone."
+title = "Record"
+description = "A Record represents a single DNS entry within a zone."
 date = 2023-08-16T13:53:00+02:00
 updated= 2023-08-16T13:53:00+02:00
 draft = false
@@ -9,7 +9,7 @@ sort_by = "weight"
 template = "docs/page.html"
 
 [extra]
-lead = 'A DNSRecord represents a single DNS entry within a zone'
+lead = 'A Record represents a single DNS entry within a zone'
 toc = true
 top = false
 +++
