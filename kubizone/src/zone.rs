@@ -208,27 +208,58 @@ async fn set_zone_parent_ref(
 async fn find_zone_nameserver_records(
     zone: &Zone,
     client: Client,
-) -> Result<impl Iterator<Item = ZoneEntry> + '_, kube::Error> {
+) -> Result<Vec<ZoneEntry>, kube::Error> {
     // Reference to this zone, which other zones and records will use to refer to it by.
     let zone_ref = ListParams::default().labels(&format!(
         "{PARENT_ZONE_LABEL}={}",
         zone.zone_ref().as_label()
     ));
 
-    Ok(Api::<Record>::all(client.clone())
-        .list(&zone_ref)
-        .await?
-        .into_iter()
-        .map(|record| record.spec)
-        .filter(|spec| spec.type_.to_uppercase() == "NS" && spec.class.to_uppercase() == "IN")
+    let records = Api::<Record>::all(client.clone()).list(&zone_ref).await?;
+
+    // Reflect self-referential NS records from the subzone in the parent zone.
+    let mut ns_records: Vec<_> = records
+        .iter()
+        .map(|record| &record.spec)
+        .filter(|spec| spec.class.to_uppercase() == "IN")
+        .filter(|spec| spec.type_.to_uppercase() == "NS")
         .filter(|spec| spec.domain_name == "@" || Some(spec.domain_name.as_str()) == zone.fqdn())
         .map(|spec| ZoneEntry {
             domain_name: zone.spec.domain_name.clone(),
-            type_: spec.type_,
-            class: spec.class,
+            type_: spec.type_.clone(),
+            class: spec.class.clone(),
             ttl: spec.ttl.unwrap_or(zone.spec.ttl),
-            rdata: spec.rdata,
-        }))
+            rdata: spec.rdata.clone(),
+        })
+        .collect();
+
+    // We also need to copy any A/AAAA records pointed to by the above NS records, to act
+    // as glue records. Glue records reside with the parent zone to instruct resolvers where
+    // to go for subzone domains. Without it, the resolver would only get back the NS record
+    // pointing at a domain like ns1.sub.example.org., but would have no way of resolving that
+    // domain itself.
+    let glue_records: Vec<_> = records
+        .iter()
+        .filter(|record| record.spec.class.to_uppercase() == "IN")
+        .filter(|record| {
+            record.spec.type_.to_uppercase() == "A" || record.spec.type_.to_uppercase() == "AAAA"
+        })
+        .filter(|record| {
+            ns_records
+                .iter()
+                .any(|ns| Some(ns.rdata.as_str()) == record.fqdn())
+        })
+        .map(|record| ZoneEntry {
+            domain_name: record.fqdn().unwrap().to_string(),
+            type_: record.spec.type_.clone(),
+            class: record.spec.class.clone(),
+            ttl: record.spec.ttl.unwrap_or(zone.spec.ttl),
+            rdata: record.spec.rdata.clone(),
+        })
+        .collect();
+
+    ns_records.extend(glue_records.into_iter());
+    Ok(ns_records)
 }
 
 async fn update_zone_status(zone: Arc<Zone>, client: Client) -> Result<(), kube::Error> {
