@@ -46,4 +46,16 @@ default:
     cargo run --bin kubizone-zonefile -- danger-recreate-crds
     cargo run --bin kubizone -- danger-recreate-crds
 
-#danger-test-coredns: danger-test helm-install-zonefile-coredns
+@install-coredns action="upgrade --install":
+    echo '{                                         \
+        "zoneFiles": [                              \
+            {                                       \
+                "zonefile": "example",              \
+                "zones": [                          \
+                    "example.org.",                 \
+                    "subdomain.example.org."        \
+                ]                                   \
+            }                                       \
+        ]                                           \
+    }' | helm -f - -n {{namespace}} {{action}}      \
+        zonefile-coredns ./charts/zonefile-coredns

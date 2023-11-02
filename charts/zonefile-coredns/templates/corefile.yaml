@@ -5,12 +5,15 @@ metadata:
   name: {{ .Release.Name }}-corefile
 data:
   Corefile: |-
-    .:53 {
+    {{ range .Values.zoneFiles }}
+    {{- $zonefile := .zonefile }}
+    {{- range .zones }}
+    {{ . }} {
         errors
         log stdout
         ready
-        {{- range .Values.zonefiles }}
-        file /zonefiles/{{ . }}
-        {{- end }}
+        file /zonefiles/{{ $zonefile }}/{{ . }}
         cache
     }
+    {{- end }}
+    {{- end }}

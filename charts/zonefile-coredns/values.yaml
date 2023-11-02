@@ -23,9 +23,11 @@ podSecurityContext:
   seccompProfile:
     type: "RuntimeDefault"
 
-zonefiles: {}
-# - my-zonefile-resource
-# - example-org
+zoneFiles: {}
+# - zonefile: example-org
+#   zones:
+#   - subdomain.example.org.
+#   - example.org.
 
 coredns:
   image:

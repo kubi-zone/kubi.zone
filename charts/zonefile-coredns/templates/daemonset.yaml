@@ -33,29 +33,16 @@ spec:
           volumeMounts:
           - name: config-volume
             mountPath: /etc/coredns
-          - name: zonefiles
-            mountPath: /zonefiles
+          {{- range .Values.zoneFiles }}
+          - name: {{ .zonefile }}
+            mountPath: zonefiles/{{ .zonefile }}
+          {{- end }}
           ports:
             - name: dns
               containerPort: 53
               protocol: UDP
           resources:
             {{- toYaml .Values.coredns.resources | nindent 12 }}
-        - name: "updater"
-          image: "{{ .Values.updater.image.repository }}:{{ .Values.updater.image.tag }}"
-          imagePullPolicy: {{ .Values.updater.image.pullPolicy }}
-          command: ["/scripts/update.sh"]
-          args:
-            {{- range .Values.zonefiles }}
-            - {{ . }}
-            {{- end }}
-          volumeMounts:
-          - name: updater-volume
-            mountPath: /scripts/update.sh
-            subPath: update.sh
-          - name: zonefiles
-            mountPath: /zonefiles
-
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -75,9 +62,13 @@ spec:
           items:
           - key: Corefile
             path: Corefile
-      - name: updater-volume
+      {{- range .Values.zoneFiles }}
+      - name: {{ .zonefile }}
         configMap:
-          name: {{ .Release.Name }}-updater
-          defaultMode: 0744
-      - name: zonefiles
-        emptyDir: {}
+          name: {{ .zonefile }}
+          items:
+            {{- range .zones }}
+            - key: {{ . }}
+              path: {{ . }}
+            {{- end }}
+      {{- end }}
