@@ -13,16 +13,7 @@ spec:
     singular: zonefile
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.zoneRef.name
-      name: zone
-      type: string
-    - jsonPath: .status.serial
-      name: serial
-      type: string
-    - jsonPath: .status.hash
-      name: hash
-      type: string
+  - additionalPrinterColumns: []
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -34,40 +25,47 @@ spec:
               configMapName:
                 nullable: true
                 type: string
-              zoneRef:
+              zoneRefs:
                 description: Reference to a [`Zone`](kubizone_crds::Zone), optionally in a different namespace.
-                properties:
-                  name:
-                    type: string
-                  namespace:
-                    nullable: true
-                    type: string
-                required:
-                - name
-                type: object
+                items:
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      nullable: true
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
             required:
-            - zoneRef
+            - zoneRefs
             type: object
           status:
             description: Describes the current state of the [`ZoneFile`], tracks state of the upstream [`Zone`](kubizone_crds::Zone), to determine when the output `ConfigMap` should be re-generated.
             nullable: true
             properties:
               hash:
+                additionalProperties:
+                  type: string
                 description: |-
                   Last observed hash of the upstream [`Zone`](kubizone_crds::Zone)
 
                   Used by the zonefile controller to trigger configmap rebuilds and zone serial rotation.
-                nullable: true
-                type: string
+                type: object
               serial:
+                additionalProperties:
+                  format: uint32
+                  minimum: 0.0
+                  type: integer
                 description: |-
                   Serial of the latest generated zonefile.
 
                   The zonefile controller will automatically increment this value whenever the zonefile configmap is rebuilt, in accordance with [RFC 1912](https://datatracker.ietf.org/doc/html/rfc1912#section-2.2)
-                format: uint32
-                minimum: 0.0
-                nullable: true
-                type: integer
+                type: object
+            required:
+            - hash
+            - serial
             type: object
         required:
         - spec

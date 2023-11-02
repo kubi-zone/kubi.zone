@@ -97,36 +97,54 @@ async fn reconcile_zonefiles(
     zonefile: Arc<ZoneFile>,
     ctx: Arc<Data>,
 ) -> Result<Action, kube::Error> {
-    let zone = Api::<Zone>::namespaced(
-        ctx.client.clone(),
-        &zonefile
-            .spec
-            .zone_ref
-            .namespace
-            .as_ref()
-            .or(zonefile.namespace().as_ref())
-            .cloned()
-            .unwrap(),
-    )
-    .get(&zonefile.spec.zone_ref.name)
-    .await?;
+    struct SerializedZone {
+        origin: String,
+        serial: u32,
+        hash: String,
+        contents: String,
+    }
 
-    apply_zonefile_backref(ctx.client.clone(), &zonefile, &zone).await?;
+    let mut serialized_zones = Vec::new();
 
-    let Some(origin) = zone.fqdn() else {
-        debug!("zone {zone} has no fqdn requeuing");
-        return Ok(Action::requeue(Duration::from_secs(30)));
-    };
+    for zone_ref in &zonefile.spec.zone_refs {
+        let zone = Api::<Zone>::namespaced(
+            ctx.client.clone(),
+            &zone_ref
+                .namespace
+                .as_ref()
+                .or(zonefile.namespace().as_ref())
+                .cloned()
+                .unwrap(),
+        )
+        .get(&zone_ref.name)
+        .await?;
 
-    let Some(hash) = zone.hash() else {
-        debug!("zone {zone} has not computed its hash yet, requeuing");
-        return Ok(Action::requeue(Duration::from_secs(5)));
-    };
+        apply_zonefile_backref(ctx.client.clone(), &zonefile, &zone).await?;
 
-    let Some(serial) = zone.serial() else {
-        debug!("zone {zone} has not produced a serial yet, requeuing");
-        return Ok(Action::requeue(Duration::from_secs(5)));
-    };
+        let Some(origin) = zone.fqdn() else {
+            debug!("zone {zone} has no fqdn, skipping.");
+            continue;
+        };
+
+        let Some(hash) = zone.hash() else {
+            debug!("zone {zone} has not computed its hash yet, skipping");
+            continue;
+        };
+
+        let Some(serial) = zone.serial() else {
+            debug!("zone {zone} has not produced a serial yet, skipping");
+            continue;
+        };
+
+        let serialized_zone = build_zonefile(origin, &zone.status.as_ref().unwrap().entries);
+
+        serialized_zones.push(SerializedZone {
+            origin: origin.to_string(),
+            serial,
+            hash: hash.to_string(),
+            contents: serialized_zone,
+        });
+    }
 
     let owner_reference = zonefile.controller_owner_ref(&()).unwrap();
     let configmap_name = zonefile
@@ -143,10 +161,14 @@ async fn reconcile_zonefiles(
             owner_references: Some(vec![owner_reference]),
             ..ObjectMeta::default()
         },
-        data: Some(BTreeMap::from([(
-            origin.trim_end_matches('.').to_string(),
-            build_zonefile(origin, &zone.status.as_ref().unwrap().entries),
-        )])),
+        data: Some(BTreeMap::from_iter(serialized_zones.iter().map(
+            |serialized_zone| {
+                (
+                    serialized_zone.origin.clone(),
+                    serialized_zone.contents.clone(),
+                )
+            },
+        ))),
         ..Default::default()
     };
 
@@ -164,8 +186,8 @@ async fn reconcile_zonefiles(
             &PatchParams::apply(CONTROLLER_NAME),
             &Patch::Merge(json!({
                 "status": {
-                    "hash": hash,
-                    "serial": serial,
+                    "hash": BTreeMap::from_iter(serialized_zones.iter().map(|serialized_zone| (&serialized_zone.origin, &serialized_zone.hash))),
+                    "serial": BTreeMap::from_iter(serialized_zones.iter().map(|serialized_zone| (&serialized_zone.origin, serialized_zone.serial))),
                 },
             })),
         )
