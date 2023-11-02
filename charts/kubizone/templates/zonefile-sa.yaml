@@ -17,7 +17,7 @@ kind: ClusterRole
 metadata:
   name: zonefile-{{ .Release.Name }}
 rules:
-- apiGroups: ["zonefile.kubi.zone"]
+- apiGroups: ["kubi.zone"]
   resources: ["zonefiles", "zonefiles/status"]
   verbs: ["patch", "update", "get", "watch", "list"]
 - apiGroups: ["kubi.zone"]

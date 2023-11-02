@@ -58,7 +58,7 @@ spec:
             {{- toYaml .Values.zonefile.args | nindent 12 }}
           env:
             - name: RUST_LOG
-              value: zonefile={{ .Values.logLevel }}
+              value: kubizone_zonefile={{ .Values.logLevel }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
