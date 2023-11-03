@@ -71,7 +71,7 @@ spec:
 ```
 
 ## Specification
-The `Record`'s `.spec` field is made up of the following fields:
+The `Record`'s `.spec` is made up of the following fields:
 ### `.spec.domainName`
 Either a fully-qualified domain name such as `www.example.org.` (notice the trailing dot), _or_
 a partial domain name (the name is only a partial name, such as the `www` in `www.example.org.`) in
@@ -95,10 +95,17 @@ In the case of an `NS` record, this will be the hostname of the nameserver.
 
 For `MX` it will be the preference and exchange expressed as a string, e.g.: `10 mail.protonmail.ch.`
 
----
-
 ### `.spec.ttl`
 Time-to-live for the record. If none is set the parent zone's default will be used, which in turn defaults to `360` seconds.
 
 ### `.spec.class`
 Can also be set, but defaults to `IN`.
+
+
+## Status
+The record status only contains the fully qualified domain name of the record.
+
+### `.status.fqdn`
+If the zone has been defined using a fully qualified `domainName`, then `.status.fqdn` will simply reflect the `.spec.domainName`.
+
+If not, then the [Kubizone Operator](../../operators/kubizone/) will automatically deduce the fully qualified domain name for the record, by following and concatenating domain names of the parent zones as defined by the `zoneRef`s until a fully qualified domain name is constructed.
