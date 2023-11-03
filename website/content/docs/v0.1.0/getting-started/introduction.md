@@ -2,7 +2,7 @@
 title = "Introduction"
 description = "Quick overview of the Kubizone project"
 date = 2023-08-16T13:53:00+02:00
-updated = 2023-11-03T11:55:32+01:00
+updated = 2023-11-03T16:18:39+01:00
 draft = false
 weight = 1
 sort_by = "weight"
