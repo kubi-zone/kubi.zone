@@ -16,7 +16,7 @@ top = false
 
 The latest version of the `Record`'s Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/Record.yaml)
 
-## What is a DNS Record?
+## What is a Record?
 A [DNS Record](https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records) is a single named entry within a zone.
 
 ## Examples
