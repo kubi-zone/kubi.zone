@@ -37,7 +37,7 @@ metadata:
   name: example
 spec:
   zoneRefs:
-    - name: example-org
+  - name: example-org
 ```
 
 ---
@@ -53,9 +53,9 @@ metadata:
   name: example-zonefile
 spec:
   zoneRefs:
-    - name: example-org
-    - name: dev-example-org
-      namespace: dev
+  - name: example-org
+  - name: dev-example-org
+    namespace: dev
 ```
 
 Would produce a configmap with the following structure:
