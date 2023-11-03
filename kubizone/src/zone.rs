@@ -99,7 +99,7 @@ async fn reconcile_zones(zone: Arc<Zone>, ctx: Arc<Data>) -> Result<Action, kube
 
             if parent_zone.spec.delegations.iter().any(|delegation| {
                 delegation.covers_namespace(zone.namespace().as_deref().unwrap())
-                    && delegation.validate_zone(&alleged_fqdn)
+                    && delegation.validate_zone(parent_fqdn, &alleged_fqdn)
             }) {
                 set_zone_fqdn(ctx.client.clone(), &zone, &alleged_fqdn).await?;
                 set_zone_parent_ref(ctx.client.clone(), &zone, parent_zone.zone_ref()).await?;

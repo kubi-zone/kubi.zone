@@ -203,15 +203,18 @@ impl Zone {
 
     /// Validate that the given Zone is allowed by the delgations specified in this Zone.
     pub fn validate_zone(&self, zone: &Zone) -> bool {
-        if !zone.fqdn().is_some_and(|fqdn| {
-            self.fqdn()
-                .is_some_and(|parent_fqdn| fqdn.ends_with(parent_fqdn))
-        }) {
-            trace!(
-                "zone {} is not a subdomain of {}",
-                zone.fqdn().unwrap_or_default(),
-                self.fqdn().unwrap_or_default()
-            );
+        let Some(parent_fqdn) = self.fqdn() else {
+            trace!("zone {self}'s fqdn is not defined.");
+            return false;
+        };
+
+        let Some(zone_fqdn) = zone.fqdn() else {
+            trace!("zone {self}'s fqdn is not defined.");
+            return false;
+        };
+
+        if zone_fqdn.ends_with(parent_fqdn) {
+            trace!("zone {} is not a subdomain of {}", zone_fqdn, parent_fqdn);
             return false;
         }
 
@@ -222,7 +225,7 @@ impl Zone {
 
         self.spec().delegations.iter().any(|delegation| {
             delegation.covers_namespace(&zone.namespace().unwrap_or_default())
-                && delegation.validate_zone(&zone.spec.domain_name)
+                && delegation.validate_zone(parent_fqdn, &zone.spec.domain_name)
         })
     }
 }
@@ -351,9 +354,9 @@ impl Delegation {
 
     /// Verify that a domain matches the zone delegation
     /// rules of this delegation.
-    pub fn validate_zone(&self, domain: &str) -> bool {
+    pub fn validate_zone(&self, parent_fqdn: &str, domain: &str) -> bool {
         for zone_delegation in &self.zones {
-            if domain_matches_pattern(zone_delegation, domain) {
+            if domain_matches_pattern(&zone_delegation.replace('@', parent_fqdn), domain) {
                 return true;
             }
         }
