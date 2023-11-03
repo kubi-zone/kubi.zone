@@ -1,5 +1,6 @@
 +++
 title = "Manage DNS in Kubernetes"
+updated = 2023-11-03T16:18:19+01:00
 
 # The homepage contents
 [extra]

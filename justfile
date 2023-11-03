@@ -64,3 +64,21 @@ default:
     docker run --rm -it -p 1111:1111 -p 1024:1024 -v $(pwd)/website:/app \
         --workdir=/app ghcr.io/getzola/zola:v0.17.2         \
         serve --interface=0.0.0.0 --output-dir=/public
+
+
+@update-timestamps:
+    shopt -s globstar; for file in website/content/**/*.md; do                          \
+        last_accessed="$(stat --format '%y' "$file" | sed 's/ /T/' | sed 's/ //')";     \
+        last_accessed="$(date --iso-8601=seconds --date=$last_accessed)";               \
+        recorded_timestamp=$(rg -o 'updated\s?=\s?(.*)' -r '$1' "$file");           \
+        if [[ "$last_accessed" == "$recorded_timestamp" ]]; then                        \
+            echo "up to date $file";                                                    \
+        else                                                                            \
+            echo "updating $file timestamp from $recorded_timestamp to $last_accessed"; \
+            sed -i -E "s/updated\s?=\s?.*/updated = $last_accessed/" "$file";   \
+            touch -d "$last_accessed" "$file";                                          \
+        fi;                                                                             \
+    done
+
+
+    # stat --format '%y' website/content/docs/v0.1.0/getting-started/introduction.md | date --iso-8601=seconds

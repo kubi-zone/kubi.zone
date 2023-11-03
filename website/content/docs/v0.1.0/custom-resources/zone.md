@@ -2,7 +2,7 @@
 title = "Zone"
 description = "A Zone represents a logical grouping of DNSRecords and sub-zones."
 date = 2023-08-16T13:53:00+02:00
-updated= 2023-08-16T13:53:00+02:00
+updated = 2023-11-03T12:59:44+01:00
 draft = false
 weight = 2
 sort_by = "weight"

@@ -1,15 +1,15 @@
 +++
 title = "ZoneFile"
-description = "A ZoneFile describes the mapping of a Zone and its DNSRecords into a ConfigMap containing the RFC1035 representation of that zone."
+description = "A ZoneFile describes the mapping of a Zone and its Records into a ConfigMap containing the RFC1035 representation of that zone."
 date = 2023-08-16T13:53:00+02:00
-updated= 2023-08-16T13:53:00+02:00
+updated = 2023-11-03T15:50:06+01:00
 draft = false
 weight = 3
 sort_by = "weight"
 template = "docs/page.html"
 
 [extra]
-lead = "A ZoneFile describes the mapping of a Zone and its DNSRecords into a ConfigMap containing the RFC1035 representation of that zone."
+lead = "A ZoneFile describes the mapping of a Zone and its Records into a ConfigMap containing the RFC1035 representation of that zone."
 toc = true
 top = false
 +++

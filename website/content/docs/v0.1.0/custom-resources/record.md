@@ -2,7 +2,7 @@
 title = "Record"
 description = "A Record represents a single DNS entry within a zone."
 date = 2023-08-16T13:53:00+02:00
-updated= 2023-08-16T13:53:00+02:00
+updated = 2023-11-03T15:14:49+01:00
 draft = false
 weight = 1
 sort_by = "weight"

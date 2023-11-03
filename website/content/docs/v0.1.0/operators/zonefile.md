@@ -2,7 +2,7 @@
 title = "Zonefile Operator"
 description = 'The Zonefile Operator monitors Zones for hash updates, and translates their entries fields into a ConfigMap'
 date = 2023-08-16T13:53:00+02:00
-updated= 2023-08-16T13:53:00+02:00
+updated = 2023-11-03T15:18:45+01:00
 draft = false
 weight = 2
 sort_by = "weight"
