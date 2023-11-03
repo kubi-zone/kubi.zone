@@ -29,7 +29,6 @@
               </div>
             {% endfor %}
 
-            {% set latest_section = get_section(path="docs/latest/_index.md") %}
             {% for s in index.subsections | sort | reverse %}
               {% set subsection = get_section(path=s) %}
               {% if subsection.pages %}
@@ -41,17 +40,15 @@
                 </div>
                 {% endfor %}
               {% else %}
-                {% if subsection.components | last != "latest" %}
                 <div class="card my-3">
                   <div class="card-body">
-                      {% if subsection.title == latest_section.title %}
+                      {% if loop.first %}
                         <a class="stretched-link" href="{{ subsection.permalink }}">{{ subsection.title }} (latest stable) &rarr;</a>
                       {% else %}
                         <a class="stretched-link" href="{{ subsection.permalink }}">{{ subsection.title }} &rarr;</a>
                       {% endif %}
                   </div>
                 </div>
-                {% endif %}
               {% endif %}
             {% endfor %}
           </div>

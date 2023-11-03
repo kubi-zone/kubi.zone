@@ -4,7 +4,7 @@ title = "Manage DNS in Kubernetes"
 # The homepage contents
 [extra]
 lead = '<b>Kubizone</b> is an ecosystem of custom resources and controllers for defining and serving domain zones in a Kubernetes-native way.'
-url = "/docs/latest/getting-started/introduction/"
+url = "/docs/v0.1.0/getting-started/introduction/"
 url_button = "Get started"
 repo_version = "GitHub v0.1.0"
 repo_license = "Open-source MIT License."
@@ -14,7 +14,7 @@ repo_url = "https://github.com/MathiasPius/kubizone"
 [[extra.menu.main]]
 name = "Docs"
 section = "docs"
-url = "/docs/latest/getting-started/introduction/"
+url = "/docs/v0.1.0/getting-started/introduction/"
 weight = 10
 
 #[[extra.menu.main]]
@@ -25,11 +25,11 @@ weight = 10
 
 [[extra.list]]
 title = "Kubernetes Native"
-content = 'Managed <a href="/docs/latest/custom-resources/dnsrecord/">DNSRecords</a> and <a href="/docs/latest/custom-resources/zone/">Zones</a> like any other Kubernetes resource.'
+content = 'Managed <a href="/docs/v0.1.0/custom-resources/dnsrecord/">DNSRecords</a> and <a href="/docs/v0.1.0/custom-resources/zone/">Zones</a> like any other Kubernetes resource.'
 
 [[extra.list]]
 title = 'Build your own Automation'
-content = 'For propagating the in-cluster <a href="/docs/latest/custom-resources/zonefile/">state</a> to your external DNS provider'
+content = 'For propagating the in-cluster <a href="/docs/v0.1.0/custom-resources/zonefile/">state</a> to your external DNS provider'
 
 [[extra.list]]
 title = '.. Or use the provided charts'

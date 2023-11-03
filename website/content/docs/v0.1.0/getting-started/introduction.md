@@ -17,7 +17,7 @@ top = false
 Kubizone delivers Kubernetes-native Domain Name System (DNS) primitives such as 
 [Records](../../custom-resources/record/) and [Zones](../../custom-resources/zone/),
 and employs an operator to ensure that associations between Records and Zones
-are kept up to date, and that Zones' [Delegation](../../custom-resources/zone/#delegations) rules
+are kept up to date, and that Zones' [Delegation](../../custom-resources/zone/#spec-delegations) rules
 are respected.
 
 ## Purpose
