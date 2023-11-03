@@ -97,12 +97,12 @@ spec:
 ## Specification
 The `Zone`'s `.spec` is made up of the following fields:
 
-### `.spec.domainName`
+### `.spec.domainName` string
 Either a fully-qualified domain name such as `subdomain.example.org.` (notice the trailing dot), _or_
 a partial domain name (the name is only a partial name, such as the `dev` in `dev.example.org.`) in
 which case the [`.spec.zoneRef`](#spec-zoneref) field must be populated.
 
-If using a fully qualified domain name, the [Kubizone operator](../../operators/kubizone/) will
+If using a fully qualified domain name, the [Kubizone Operator](../../operators/kubizone/) will
 automatically attempt to deduce which parent [Zone](../zones/) the record belongs to, favoring
 the longest matching parent domain name.
 
@@ -124,7 +124,7 @@ List of rules by which records and sub-zones can be adopted by this zone.
 
 Each rule is made up of the following _optional_ fields:
 
-* `records`: List of record delegations to allow.
+* `records` [RecordDelegation]: List of record delegations to allow.
     
     Each record delegation in turn has the fields:
     * `types`, a list of record types to delegate (`A`, `CNAME`, etc.)
@@ -146,26 +146,26 @@ Each rule is made up of the following _optional_ fields:
 
 * `namespace`: Limit the above rules to a singular namespace.
 
-### `.spec.ttl`
+### `.spec.ttl` u32
 Set a default Time-To-Live (TTL) value across the zone, which will be used if records don't specify one
 themselves.
 
 Defaults to 360 seconds, to increase cache responsiveness.
 
-### `.spec.refresh`
+### `.spec.refresh` u32
 Number of seconds after which secondary name servers should query the master for the SOA record,
 to detect zone changes. 
 
 Defaults to the recommendation for small and stable zones: [86400 seconds (24 hours)](https://www.ripe.net/publications/docs/ripe-203).
 
-### `.spec.retry`
+### `.spec.retry` u32
 Number of seconds after which secondary name servers should retry to request the serial number from the master if the master does not respond.
   
 It must be less than `.spec.refresh`.
 
 Defaults to the recommendation for small and stable zones: [7200 seconds (2 hours)](https://www.ripe.net/publications/docs/ripe-203).
 
-### `.spec.expire`
+### `.spec.expire` u32
 Number of seconds after which secondary name servers should stop answering request for this zone if the master does not respond.
 
 This value must be bigger than the _sum_ of `.spec.refresh` and `.spec.retry`.
@@ -173,7 +173,7 @@ This value must be bigger than the _sum_ of `.spec.refresh` and `.spec.retry`.
 Defaults to recommendation for small and stable zones: [3600000 seconds (1000 hours)](https://www.ripe.net/publications/docs/ripe-203).
 
 
-### `.spec.negativeResponseCache`
+### `.spec.negativeResponseCache` u32
 Used in calculating the Time-To-Live (TTL) for purposes of _negative_ caching.
   
 Authoritative name servers take the smaller of the SOA TTL and this value to send as the SOA TTL in negative responses.
@@ -190,17 +190,24 @@ The Zone status contains the fully qualified domain name of the Zone, a composit
 as well as a hash value of these records, which can be used by downstream providers to easily detect changes.
 
 ### `.status.entries`
-Contains a composite list of all child records successfully adopted by this zone, as well as any `NS` and related glue records (`A` and `AAAA` records) of sub-zones, as well as an `SOA` record for the zone, utilizing the variables defined in the `.spec.`.
+Contains a composite list of all child records successfully adopted by this zone, any `NS` and related glue records (`A` and `AAAA` records) of sub-zones, as well as an `SOA` record for the zone, utilizing the variables defined in the `.spec`.
+
+Each entry contains:
+* `fqdn` string
+* `type` string
+* `class` string
+* `ttl` u32
+* `rdata` string
 
 Changes in immediate child records, as well as changes to `NS` and related glue records (`A` and `AAAA` records) of sub-zones
 causes the entries list to be re-populated.
 
-### `.status.fqdn`
+### `.status.fqdn` string
 If the zone has been defined using a fully qualified `domainName`, then `.status.fqdn` will simply reflect the `.spec.domainName`.
 
 If not, then the [Kubizone Operator](../../operators/kubizone/) will automatically deduce the fully qualified domain name for the zone, by following and concatenating domain names of the parent zones as defined by the `zoneRef`s until a fully qualified domain name is constructed.
 
-### `.status.hash`
+### `.status.hash` string
 contains a hash of the zone and its constituent parts, computed based on the `.status.entries` field.
 
 Changes to the `.status.entries` list causes the hash to be recomputed.
