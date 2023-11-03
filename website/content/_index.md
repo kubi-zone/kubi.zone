@@ -25,14 +25,14 @@ weight = 10
 
 [[extra.list]]
 title = "Kubernetes Native"
-content = 'Managed <a href="/docs/v0.1.0/custom-resources/dnsrecord/">DNSRecords</a> and <a href="/docs/v0.1.0/custom-resources/zone/">Zones</a> like any other Kubernetes resource.'
+content = 'manage <a href="/docs/v0.1.0/custom-resources/record/">Records</a> and <a href="/docs/v0.1.0/custom-resources/zone/">Zones</a> like any other Kubernetes resource.'
 
 [[extra.list]]
 title = 'Build your own Automation'
-content = 'For propagating the in-cluster <a href="/docs/v0.1.0/custom-resources/zonefile/">state</a> to your external DNS provider'
+content = 'for propagating the in-cluster <a href="/docs/v0.1.0/custom-resources/zone/#status-entries">state</a> to your external DNS provider'
 
 [[extra.list]]
 title = '.. Or use the provided charts'
-content = 'To serve your zone authoritatively directly from your cluster with <a href="#">CoreDNS</a>'
+content = 'to serve your zone authoritatively directly from your cluster with a <a href="/docs/v0.1.0/custom-resources/zonefile/">ZoneFile</a> and <a href="https://github.com/kubi-zone/kubi.zone/tree/main/charts/zonefile-coredns">CoreDNS</a>'
 
 +++
