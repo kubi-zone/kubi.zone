@@ -9,12 +9,12 @@ sort_by = "weight"
 template = "docs/page.html"
 
 [extra]
-lead = "Installing the Kubizone Helm Chart"
+lead = "Using the Zone and Record resources."
 toc = true
 top = false
 +++
 
-Once you have completed the [installaton](./installation), you can start building out your Zones and Records,
+Once you have completed the [installation](../installation), you can start building out your Zones and Records,
 the same way you do all your other Kubernetes Resources.
 
 ```yaml
