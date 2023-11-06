@@ -2,7 +2,7 @@
 title = "Usage"
 description = "Using the Zone and Record resources."
 date = 2023-11-06T20:26:16+01:00
-updated = 2023-11-06T20:08:16+01:00
+updated = 2023-11-06T20:39:54+01:00
 draft = false
 weight = 3
 sort_by = "weight"
