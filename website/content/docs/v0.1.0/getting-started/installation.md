@@ -2,7 +2,7 @@
 title = "Installation"
 description = "Installing the Kubizone Helm Chart"
 date = 2023-08-16T13:53:00+02:00
-updated = 2023-11-06T20:08:16+01:00
+updated = 2023-11-06T20:40:14+01:00
 draft = false
 weight = 2
 sort_by = "weight"
