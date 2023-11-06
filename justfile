@@ -68,17 +68,15 @@ default:
 
 @update-timestamps:
     shopt -s globstar; for file in website/content/**/*.md; do                          \
-        last_accessed="$(git log -1 --pretty="format:%ci" website/content/docs/_index.md "$file" | sed 's/ /T/' | sed 's/ //')";     \
+        last_accessed="$(git log -1 --pretty="format:%ai" "$file" | sed 's/ /T/' | sed 's/ //')";     \
         last_accessed="$(date --iso-8601=seconds --date=$last_accessed)";               \
-        recorded_timestamp=$(rg -o 'updated\s?=\s?(.*)' -r '$1' "$file");           \
+        recorded_timestamp=$(rg -o 'updated\s?=\s?(.*)' -r '$1' "$file");               \
         if [[ "$last_accessed" == "$recorded_timestamp" ]]; then                        \
             echo "up to date $file";                                                    \
         else                                                                            \
             echo "updating $file timestamp from $recorded_timestamp to $last_accessed"; \
-            sed -i -E "s/updated\s?=\s?.*/updated = $last_accessed/" "$file";   \
-            touch -d "$last_accessed" "$file";                                          \
+            sed -i -E "s/updated\s?=\s?.*/updated = $last_accessed/" "$file";           \
+            git add "$file";                                                           \
+            git commit --date "$last_accessed" -m "Fix 'updated' metadata field for $file to match last commit time."; \
         fi;                                                                             \
     done
-
-
-    # stat --format '%y' website/content/docs/v0.1.0/getting-started/introduction.md | date --iso-8601=seconds
