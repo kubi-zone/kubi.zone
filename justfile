@@ -68,7 +68,7 @@ default:
 
 @update-timestamps:
     shopt -s globstar; for file in website/content/**/*.md; do                          \
-        last_accessed="$(stat --format '%y' "$file" | sed 's/ /T/' | sed 's/ //')";     \
+        last_accessed="$(git log -1 --pretty="format:%ci" website/content/docs/_index.md "$file" | sed 's/ /T/' | sed 's/ //')";     \
         last_accessed="$(date --iso-8601=seconds --date=$last_accessed)";               \
         recorded_timestamp=$(rg -o 'updated\s?=\s?(.*)' -r '$1' "$file");           \
         if [[ "$last_accessed" == "$recorded_timestamp" ]]; then                        \
