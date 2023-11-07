@@ -29,6 +29,7 @@ include_content = true
 author = "Mathias Pius"
 github = "https://github.com/mathiaspius/kubizone"
 email = "mathias@datavirke.dk"
+logo = "icon.svg"
 
 # If running on netlify.app site, set to true
 is_netlify = false
