@@ -14,7 +14,7 @@ toc = true
 top = false
 +++
 
-The latest version of the `ZoneFile`'s' Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/ZoneFile.yaml)
+The latest version of the `ZoneFile`'s Custom Resource Definition can be found [here](https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/ZoneFile.yaml)
 
 ## What is a ZoneFile?
 
