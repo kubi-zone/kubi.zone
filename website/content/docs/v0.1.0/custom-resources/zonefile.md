@@ -2,7 +2,7 @@
 title = "ZoneFile"
 description = "A ZoneFile describes the mapping of a Zone and its Records into a ConfigMap containing the RFC1035 representation of that zone."
 date = 2023-08-16T13:53:00+02:00
-updated = 2023-11-03T16:18:39+01:00
+updated = 2023-11-08T13:22:05+01:00
 draft = false
 weight = 3
 sort_by = "weight"
