@@ -16,6 +16,8 @@ top = false
 
 The easiest way to install Kubizone and jump right into managing zones, is to install the Helm Chart.
 
+## Custom Resource Definitions
+
 Because of the lack of real support for managing Custom Resource Definitions using Helm Charts,
 you will have to install these manually first:
 
@@ -30,10 +32,15 @@ you also have to install the `ZoneFile` CRD:
 $ kubectl apply - f https://raw.githubusercontent.com/kubi-zone/kubi.zone/main/crds/kubi.zone/v1alpha1/ZoneFile.yaml
 ```
 
+## Deploying the chart
+Add the Helm repository
+```bash
+$ helm repo add kubizone https://charts.kubi.zone/
+```
 
-Next, install the chart located [here](https://github.com/kubi-zone/kubi.zone/blob/main/charts/kubizone).
+Install the chart
+```bash
+$ helm install -n kube-system kubizone kubizone/kubizone
+```
 
-**Note** Working on automatically packaging the charts so they can be installed directly, without git cloning.
-
-Please see the [values.yaml](https://github.com/kubi-zone/kubi.zone/blob/main/charts/kubizone/values.yaml) file
-for the chart, for a list of available configuration options.
+Please see the [values.yaml](https://github.com/kubi-zone/charts/blob/main/charts/kubizone/values.yaml) file for a list of available configuration options.

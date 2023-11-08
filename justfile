@@ -15,14 +15,18 @@ default:
 
 @publish-all: (publish "kubizone") (publish "zonefile")
 
-@install zonefile="false" recreate="false":
+@repo:
+    helm repo add kubizone https://charts.kubi.zone/
+    helm repo update kubizone
+
+@install zonefile="false" recreate="false": repo
     helm -n {{namespace}} upgrade --install     \
         --set kubizone.image.tag=dev            \
         --set zonefile.image.tag=dev            \
         --set zonefile.enable={{zonefile}}      \
         --set dangerRecreateCrds={{recreate}}   \
         --set image.pullPolicy=Always           \
-        kubizone ./charts/kubizone
+        kubizone kubizone/kubizone
 
 @uninstall:
     helm -n {{namespace}} uninstall kubizone
@@ -45,7 +49,7 @@ default:
     cargo run --bin zonefile -- danger-recreate-crds
     cargo run --bin kubizone -- danger-recreate-crds
 
-@install-coredns action="upgrade --install":
+@install-coredns action="upgrade --install": repo
     echo '{                                         \
         "zoneFiles": [                              \
             {                                       \
@@ -57,7 +61,7 @@ default:
             }                                       \
         ]                                           \
     }' | helm -f - -n {{namespace}} {{action}}      \
-        zonefile-coredns ./charts/zonefile-coredns
+        zonefile-coredns kubizone/zonefile-coredns
 
 @docs:
     sleep 1 && xdg-open http://localhost:1111 &
