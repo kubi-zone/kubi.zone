@@ -34,7 +34,6 @@ default:
 @test:
     kubectl -n {{namespace}} delete -f zonefile/examples/simple-zonefile.yaml || true
     kubectl -n {{namespace}} apply -f zonefile/examples/simple-zonefile.yaml
-    #kubectl -n {{namespace}} get pods -o name | grep kubizone | xargs -n1 kubectl -n {{namespace}} delete
 
 @clean:
     helm -n {{namespace}} uninstall kubizone || true
