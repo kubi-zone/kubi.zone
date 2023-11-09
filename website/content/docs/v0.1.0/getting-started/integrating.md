@@ -2,7 +2,7 @@
 title = "Integrating"
 description = "Integrating Kubizone resources with your DNS provider."
 date = 2023-11-09T14:00:00+01:00
-updated = 2023-11-09T14:00:00+01:00
+updated = 2023-11-09T14:15:39+01:00
 draft = false
 weight = 4
 sort_by = "weight"
