@@ -13,7 +13,6 @@ members = [
 # Kubizone
 kubizone-crds = { path = "kubizone/crds" }
 zonefile-crds = { path = "zonefile/crds" }
-crd-utils = { path = "crd-utils" }
 
 # Logging
 tracing = "0.1.40"

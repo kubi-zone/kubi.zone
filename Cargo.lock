@@ -266,10 +266,14 @@ checksum = "e496a50fda8aacccc86d7529e2c1e0892dbd0f898a6b5645b5561b89c3210efa"
 name = "crd-utils"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "k8s-openapi",
  "kube",
+ "kubizone-crds",
  "serde_yaml",
  "tokio",
+ "tracing-subscriber",
+ "zonefile-crds",
 ]
 
 [[package]]
@@ -793,7 +797,6 @@ name = "kubizone"
 version = "0.1.0"
 dependencies = [
  "clap",
- "crd-utils",
  "futures",
  "k8s-openapi",
  "kube",
@@ -1842,7 +1845,6 @@ name = "zonefile"
 version = "0.1.0"
 dependencies = [
  "clap",
- "crd-utils",
  "futures",
  "k8s-openapi",
  "kube",

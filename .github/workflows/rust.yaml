@@ -86,6 +86,8 @@ jobs:
     needs: [lint, test, check-crds]
     name: Build Operators
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     strategy:
       matrix:
         crate:

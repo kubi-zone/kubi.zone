@@ -2,10 +2,14 @@
 name = "crd-utils"
 version = "0.1.0"
 edition = "2021"
-description = "used for writing yaml-formatted custom resource definitions to crds/"
+description = "Used for writing yaml-formatted custom resource definitions to crds/"
 
 [dependencies]
+tracing-subscriber = { workspace = true }
 kube = { workspace = true }
+kubizone-crds = { workspace = true }
+zonefile-crds = { workspace = true }
 k8s-openapi = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true, features = [] }
+clap = { workspace = true }

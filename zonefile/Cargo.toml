@@ -9,7 +9,6 @@ edition = "2021"
 # Kubizone
 kubizone-crds = { workspace = true }
 zonefile-crds = { workspace = true }
-crd-utils = { workspace = true }
 
 # Utilities
 tracing = { workspace = true }

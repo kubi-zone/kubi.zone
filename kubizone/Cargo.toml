@@ -22,4 +22,3 @@ futures =  { workspace = true }
 
 # CLI
 clap = { workspace = true }
-crd-utils = { workspace = true }
