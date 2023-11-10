@@ -62,17 +62,15 @@ jobs:
     needs: [lint, test, check-crds]
     name: Publish CRDs
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        crate:
-          - kubizone-crds
-          - zonefile-crds
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Publish crate to crates.io
-        run: cargo publish --package ${{ matrix.crate }} --token ${{ secrets.CARGO_LOGIN_TOKEN }}
+        run: cargo publish --package kubizone-crds --token ${{ secrets.CARGO_LOGIN_TOKEN }}
+
+      - name: Publish crate to crates.io
+        run: cargo publish --package zonefile-crds --token ${{ secrets.CARGO_LOGIN_TOKEN }}
   
   build-operators:
     needs: [lint, test, check-crds]
