@@ -46,11 +46,6 @@ jobs:
   check-crds:
     name: Ensure CRDs up to date
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        crate:
-          - kubizone
-          - zonefile
     steps:
       - name: Checkout repository
         uses: actions/checkout@master
@@ -61,7 +56,7 @@ jobs:
           toolchain: stable
       
       - name: Dump CRDs and check diff
-        run: cargo run --package ${{ matrix.crate }} -- dump-crds crds && git diff --exit-code
+        run: cargo run --bin crd-utils -- dump && git diff --exit-code
 
   publish-crds:
     needs: [lint, test, check-crds]
