@@ -19,12 +19,11 @@ default:
     helm repo add kubizone https://charts.kubi.zone/
     helm repo update kubizone
 
-@install zonefile="false" recreate="false": repo
+@install zonefile="false": repo
     helm -n {{namespace}} upgrade --install     \
         --set kubizone.image.tag=dev            \
         --set zonefile.image.tag=dev            \
         --set zonefile.enable={{zonefile}}      \
-        --set dangerRecreateCrds={{recreate}}   \
         --set image.pullPolicy=Always           \
         kubizone kubizone/kubizone
 
