@@ -111,7 +111,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ github.repository_owner }}/${{ matrix.crate }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.crate }}
           tags: |
             type=schedule
             type=ref,event=branch
