@@ -66,11 +66,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Publish crate to crates.io
-        run: cargo publish --package kubizone-crds --token ${{ secrets.CARGO_LOGIN_TOKEN }}
+      - name: Publish kubizone-crds to crates.io
+        uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_LOGIN_TOKEN }}
+          args: --no-verify --package kubizone-crds
+          ignore-unpublished-changes: true
 
-      - name: Publish crate to crates.io
-        run: cargo publish --package zonefile-crds --token ${{ secrets.CARGO_LOGIN_TOKEN }}
+      - name: Publish zonefile-crds to crates.io
+        uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_LOGIN_TOKEN }}
+          args: --no-verify --package zonefile-crds
+          ignore-unpublished-changes: true
   
   build-operators:
     needs: [lint, test, check-crds]
