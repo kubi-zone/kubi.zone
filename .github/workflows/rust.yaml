@@ -49,8 +49,8 @@ jobs:
     strategy:
       matrix:
         crate:
-          - kubizone-crds
-          - zonefile-crds
+          - kubizone
+          - zonefile
     steps:
       - name: Checkout repository
         uses: actions/checkout@master
