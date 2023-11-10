@@ -1,7 +1,11 @@
 [package]
 name = "kubizone-crds"
+description = "Rust library exposing the Kubizone CRDs as types."
+keywords = ["kubernetes", "kubizone", "crd"]
+repository = "https://github.com/kubi-zone/kubi.zone"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,7 +16,6 @@ serde_json = { workspace = true }
 schemars = { workspace = true }
 kube = { workspace = true }
 k8s-openapi = { workspace = true }
-
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }

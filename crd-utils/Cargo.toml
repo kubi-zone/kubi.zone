@@ -2,6 +2,7 @@
 name = "crd-utils"
 version = "0.1.0"
 edition = "2021"
+publish = false
 description = "Used for writing yaml-formatted custom resource definitions to crds/"
 
 [dependencies]
