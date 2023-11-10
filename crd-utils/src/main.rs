@@ -24,6 +24,7 @@ struct Args {
 enum Command {
     Dump,
     Recreate {
+        #[clap(long)]
         yes_im_sure_i_want_to_delete_all_resources: bool,
     },
 }
