@@ -23,7 +23,6 @@ jobs:
           components: [rustfmt, clippy]
 
       - name: Run rustfmt
-        uses: actions-rs/cargo@v1
         run: cargo fmt --all -- --check
       
       - name: Run clippy
