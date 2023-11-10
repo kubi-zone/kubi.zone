@@ -41,12 +41,10 @@ default:
     kubectl -n {{namespace}} delete records --all
 
 @dump-crds:
-    cargo run --bin zonefile -- dump-crds crds
-    cargo run --bin kubizone -- dump-crds crds
+    cargo run --bin crd-utils -- dump
 
-@danger-recreate-crds:
-    cargo run --bin zonefile -- danger-recreate-crds
-    cargo run --bin kubizone -- danger-recreate-crds
+@danger-recreate-crds yes_im_sure:
+    cargo run --bin crd-utils -- recreate {{yes_im_sure}}
 
 @install-coredns action="upgrade --install": repo
     echo '{                                         \
