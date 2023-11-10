@@ -6,7 +6,7 @@ on:
     branches:
       - main
 
-name: Test & Tag
+name: Test, Build, Publish
 
 jobs:
   lint:
@@ -93,7 +93,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-    - name: set up qemu
+      - name: set up qemu
         uses: docker/setup-qemu-action@v3
 
       - name: set up docker buildx
