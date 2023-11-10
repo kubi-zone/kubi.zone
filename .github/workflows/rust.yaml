@@ -20,7 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          components: [rustfmt, clippy]
+          components: rustfmt,clippy
 
       - name: Run rustfmt
         run: cargo fmt --all -- --check
@@ -46,10 +46,11 @@ jobs:
   check-crds:
     name: Ensure CRDs up to date
     runs-on: ubuntu-latest
-    matrix:
-      crate:
-        - kubizone-crds
-        - zonefile-crds
+    strategy:
+      matrix:
+        crate:
+          - kubizone-crds
+          - zonefile-crds
     steps:
       - name: Checkout repository
         uses: actions/checkout@master
@@ -66,10 +67,11 @@ jobs:
     needs: [lint, test, check-crds]
     name: Publish CRDs
     runs-on: ubuntu-latest
-    matrix:
-      crate:
-        - kubizone-crds
-        - zonefile-crds
+    strategy:
+      matrix:
+        crate:
+          - kubizone-crds
+          - zonefile-crds
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,10 +86,11 @@ jobs:
     needs: [lint, test, check-crds]
     name: Build Operators
     runs-on: ubuntu-latest
-    matrix:
-      crate:
-        - kubizone
-        - zonefile
+    strategy:
+      matrix:
+        crate:
+          - kubizone
+          - zonefile
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
