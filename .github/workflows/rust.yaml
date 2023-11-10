@@ -65,19 +65,14 @@ jobs:
     strategy:
       matrix:
         crate:
-          - kubizone
-          - zonefile
+          - kubizone-crds
+          - zonefile-crds
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Publish crate to crates.io
-        uses: katyo/publish-crates@v2
-        with:
-          registry-token: ${{ secrets.CARGO_LOGIN_TOKEN }}
-          no-verify: true
-          path: ${{ matrix.crate }}/crds/
-          ignore-unpublished-changes: true
+        run: cargo publish --package ${{ matrix.crate }} --token ${{ secrets.CARGO_LOGIN_TOKEN }}
   
   build-operators:
     needs: [lint, test, check-crds]
