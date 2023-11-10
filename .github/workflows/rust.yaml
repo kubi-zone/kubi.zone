@@ -65,8 +65,8 @@ jobs:
     strategy:
       matrix:
         crate:
-          - kubizone-crds
-          - zonefile-crds
+          - kubizone
+          - zonefile
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
         with:
           registry-token: ${{ secrets.CARGO_LOGIN_TOKEN }}
           no-verify: true
-          args: --package ${{ matrix.crate }}
+          path: ${{ matrix.crate }}/crds/
           ignore-unpublished-changes: true
   
   build-operators:
