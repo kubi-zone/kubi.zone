@@ -82,8 +82,11 @@ default:
     done
 
 @release operator:
-    version=$(cat ./{{operator}}/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'); \
+    export version=$(cat ./{{operator}}/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'); \
+    git fetch -ap; \
+    if git show-ref --tags "{{operator}}-v$version" --quiet; then echo "Tag already exists."; exit 1; fi; \
     sha="sha-$(git log -1 --pretty=format:%H | cut -c -7)"; \
-    docker pull "ghcr.io/kubi-zone/kubizone:$sha"; \
-    docker tag  "ghcr.io/kubi-zone/kubizone:$sha" "ghcr.io/kubi-zone/kubizone:v$version"; \
-    docker push "ghcr.io/kubi-zone/kubizone:v$version"
+    docker pull "ghcr.io/kubi-zone/{{operator}}:$sha"; \
+    docker tag  "ghcr.io/kubi-zone/{{operator}}:$sha" "ghcr.io/kubi-zone/{{operator}}:v$version"; \
+    docker push "ghcr.io/kubi-zone/{{operator}}:v$version"; \
+    git tag "{{operator}}-v$version" && git push --tags origin "{{operator}}-v$version";
