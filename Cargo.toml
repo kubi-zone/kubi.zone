@@ -3,16 +3,11 @@ resolver = "2"
 members = [
     "kubizone/crds",
     "kubizone",
-    "zonefile/crds",
-    "zonefile",
-    "crd-utils"
 ]
-
 
 [workspace.dependencies]
 # Kubizone
 kubizone-crds = { path = "kubizone/crds", version = "0.1.0" }
-zonefile-crds = { path = "zonefile/crds", version = "0.1.0" }
 
 # Logging
 tracing = "0.1.40"
