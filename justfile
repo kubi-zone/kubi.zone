@@ -80,3 +80,10 @@ default:
             git commit --date "$last_accessed" -m "Fix 'updated' metadata field for $file to match last commit time."; \
         fi;                                                                             \
     done
+
+@release operator:
+    version=$(cat ./{{operator}}/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"'); \
+    sha="sha-$(git log -1 --pretty=format:%H | cut -c -7)"; \
+    docker pull "ghcr.io/kubi-zone/kubizone:$sha"; \
+    docker tag  "ghcr.io/kubi-zone/kubizone:$sha" "ghcr.io/kubi-zone/kubizone:v$version"; \
+    docker push "ghcr.io/kubi-zone/kubizone:v$version"
