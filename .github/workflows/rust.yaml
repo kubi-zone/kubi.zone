@@ -125,8 +125,6 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-            v${{ steps.crate-version.outputs.version }}
-            latest
 
       - name: Build and push
         uses: docker/build-push-action@v5
