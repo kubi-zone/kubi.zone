@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="preload" as="font" href="https://kubi.zone/fonts/vendor/jost/jost-v4-latin-regular.woff2" type="font/woff2" crossorigin>
+  <link rel="preload" as="font" href="https://kubi.zone/fonts/vendor/jost/jost-v4-latin-700.woff2"  type="font/woff2" crossorigin>
+
+
+<link rel="stylesheet" href="https://kubi.zone/main.css">
+
+
+
+  
+  
+    
+  
+
+  
+  
+    
+    
+  
+  
+  
+    
+  
+  
+  
+  
+    
+  
+  
+  
+
+
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
+
+	
+
+
+	
+
+<title>ZoneFile | kubizone</title>
+<meta name="description" content="A ZoneFile describes the mapping of a Zone and its Records into a ConfigMap containing the RFC1035 representation of that zone.">
+<link rel="canonical" href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/">
+
+
+
+
+
+
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "BreadcrumbList",
+    
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+          {
+            "@type": "ListItem",
+            "position":  1 ,
+            "name": "Home",
+            "item": "https://kubi.zone/"
+          },
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  2 ,
+            "name": "Docs",
+            "item": "https://kubi.zone/docs/"
+          },
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  3 ,
+            "name": "V0.1.0",
+            "item": "https://kubi.zone/docs/v0.1.0/"
+          },
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  4 ,
+            "name": "Custom Resources",
+            "item": "https://kubi.zone/docs/v0.1.0/custom-resources/"
+          },
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  5 ,
+            "name": "Zonefile",
+            "item": "https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/"
+          },
+        
+      
+    
+  }
+</script>
+
+
+
+
+
+
+  <meta name="theme-color" content="#fff">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://kubi.zone/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://kubi.zone/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://kubi.zone/favicon-16x16.png">
+  
+    <link rel="manifest" href="https://kubi.zone/site.webmanifest" crossorigin>
+  
+
+
+  
+
+</head>
+
+  
+
+<body class="docs single">
+  
+  
+  
+  
+  
+<div class="header-bar fixed-top"></div>
+<header class="navbar fixed-top navbar-expand-md navbar-light">
+	<div class="container">
+		<input class="menu-btn order-0" type="checkbox" id="menu-btn">
+		<label class="menu-icon d-md-none" for="menu-btn"><span class="navicon"></span></label>
+		<a class="navbar-brand order-1 order-md-0 me-auto" href="https://kubi.zone">
+			<img src="https://kubi.zone/icon.svg" width="28px" height="28px" />
+			kubizone
+		</a>
+		<button id="mode" class="btn btn-link order-2 order-md-4" type="button" aria-label="Toggle mode">
+			<span class="toggle-dark"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></span>
+			<span class="toggle-light"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg></span>
+		</button>
+		<ul class="navbar-nav fork-me order-3 order-md-5">
+			
+				
+					<li class="nav-item">
+						<a class="nav-link" href="https://github.com/mathiaspius/kubizone"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg><span class="ms-2 visually-hidden">GitHub</span></a>
+					</li>
+				
+			
+		</ul>
+		<div class="collapse navbar-collapse order-4 order-md-1">
+			<ul class="navbar-nav main-nav me-auto order-5 order-md-2">
+				
+					
+				
+				
+				
+					
+						<li class="nav-item">
+							<a class="nav-link" href="https://kubi.zone/docs/v0.1.0/getting-started/introduction/">Docs</a>
+						</li>
+					
+				
+			</ul>
+			<div class="break order-6 d-md-none"></div>
+			
+				<form class="navbar-form flex-grow-1 order-7 order-md-3">
+					<input id="userinput" class="form-control is-search" type="search" placeholder="Search docs..."
+						aria-label="Search docs..." autocomplete="off">
+					<div id="suggestions" class="shadow bg-white rounded"></div>
+				</form>
+			
+		</div>
+	</div>
+</header>
+
+
+
+  
+<div class="wrap container" role="document">
+  <div class="content">
+    <div class="row flex-xl-nowrap">
+	  
+<div class="col-lg-5 col-xl-4 docs-sidebar">
+	<nav class="docs-links" aria-label="Main navigation">
+			
+			
+			
+			<a href="/docs"><h1>v0.1.0</h1></a>
+			
+			
+			
+					
+					
+					
+							<h3>Getting Started</h3>
+							<ul class="list-unstyled">
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/introduction/">Introduction</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/installation/">Installation</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/usage/">Usage</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/integrating/">Integrating</a></li>
+							
+					</ul>
+					
+					
+					
+					
+							<h3>Custom Resources</h3>
+							<ul class="list-unstyled">
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/custom-resources/record/">Record</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/custom-resources/zone/">Zone</a></li>
+							                           
+									<li><a class="docs-link active" href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/">ZoneFile</a></li>
+							
+					</ul>
+					
+					
+					
+					
+							<h3>Operators</h3>
+							<ul class="list-unstyled">
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/operators/kubizone/">Kubizone Operator</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/operators/zonefile/">Zonefile Operator</a></li>
+							
+					</ul>
+					
+					
+			
+	</nav>
+</div>
+
+	  
+  
+  <nav class="docs-toc d-none d-xl-block col-xl-3" aria-label="Secondary navigation">
+  	<div class="page-links">
+  			<h3>On this page</h3>
+  			<nav id="TableOfContents">
+  					<ul>
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#what-is-a-zonefile">What is a ZoneFile?</a></li>
+  							
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#examples">Examples</a></li>
+  							
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#specification">Specification</a></li>
+  							
+  									<ul>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#spec-zonerefs">.spec.zoneRefs</a></li>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#spec-configmapname-string">.spec.configMapName string</a></li>
+  											
+  									</ul>
+  							
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#status">Status</a></li>
+  							
+  									<ul>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#status-hash-string">.status.hash string</a></li>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/#status-serial-u32">.status.serial u32</a></li>
+  											
+  									</ul>
+  							
+  							
+  					</ul>
+  			</nav>
+  	</div>
+  </nav>
+  
+
+      <main class="docs-content col-lg-11 col-xl-9">
+        <h1>ZoneFile</h1>
+        <p class="lead">A ZoneFile describes the mapping of a Zone and its Records into a ConfigMap containing the RFC1035 representation of that zone.</p>
+        <p>The latest version of the <code>ZoneFile</code>'s Custom Resource Definition can be found <a href="https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/ZoneFile.yaml">here</a></p>
+<h2 id="what-is-a-zonefile">What is a ZoneFile?</h2>
+<p>Within the Domain Name System a <a href="https://en.wikipedia.org/wiki/Zone_file">Zone file</a> is a text file representation of a DNS zone.</p>
+<p>Within the context of Kubizone, a <code>ZoneFile</code> resource describes a way for the <a href="../operators/zonefile/">Zonefile Operator</a>
+to produce <a href="https://kubernetes.io/docs/concepts/configuration/configmap/">ConfigMaps</a> containing the text representations
+of the <a href="../custom-resources/record/">Records</a> and <a href="../custom-resources/zone/">Zones</a> defined within the cluster.</p>
+<h2 id="examples">Examples</h2>
+<p>The following manifest instructs the <a href="../operators/zonefile/">Zonefile Operator</a> to produce a <code>ConfigMap</code> describing the
+<a href="../custom-resources/zone/">Zone</a> named <code>example-org</code>, and by extension all <a href="../custom-resources/record/">Records</a>
+and sub-zones associated with it.</p>
+<pre data-lang="yaml" style="background-color:#2b303b;color:#c0c5ce;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">apiVersion</span><span>: </span><span style="color:#a3be8c;">kubi.zone/v1alpha1
+</span><span style="color:#bf616a;">kind</span><span>: </span><span style="color:#a3be8c;">ZoneFile
+</span><span style="color:#bf616a;">metadata</span><span>:
+</span><span>  </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">example
+</span><span style="color:#bf616a;">spec</span><span>:
+</span><span>  </span><span style="color:#bf616a;">zoneRefs</span><span>:
+</span><span>  - </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">example-org
+</span></code></pre>
+<hr />
+<p><code>zoneRefs</code> is a list of zones to include in the resulting <code>ConfigMap</code>.</p>
+<p>Each zone gets its own file/entry in the <code>ConfigMap</code>. For example, the following <code>ZoneFile</code> definition:</p>
+<pre data-lang="yaml" style="background-color:#2b303b;color:#c0c5ce;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">apiVersion</span><span>: </span><span style="color:#a3be8c;">kubi.zone/v1alpha1
+</span><span style="color:#bf616a;">kind</span><span>: </span><span style="color:#a3be8c;">ZoneFile
+</span><span style="color:#bf616a;">metadata</span><span>:
+</span><span>  </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">example-zonefile
+</span><span style="color:#bf616a;">spec</span><span>:
+</span><span>  </span><span style="color:#bf616a;">zoneRefs</span><span>:
+</span><span>  - </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">example-org
+</span><span>  - </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">dev-example-org
+</span><span>    </span><span style="color:#bf616a;">namespace</span><span>: </span><span style="color:#a3be8c;">dev
+</span></code></pre>
+<p>Would produce a configmap with the following structure:</p>
+<pre data-lang="yaml" style="background-color:#2b303b;color:#c0c5ce;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">apiVersion</span><span>: </span><span style="color:#a3be8c;">v1
+</span><span style="color:#bf616a;">kind</span><span>: </span><span style="color:#a3be8c;">ConfigMap
+</span><span style="color:#bf616a;">metadata</span><span>:
+</span><span>  </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">example-zonefile
+</span><span style="color:#bf616a;">data</span><span>:
+</span><span>  </span><span style="color:#bf616a;">example.org.</span><span>: </span><span style="color:#b48ead;">|-
+</span><span style="color:#a3be8c;">    $ORIGIN example.org.
+</span><span style="color:#a3be8c;">
+</span><span style="color:#a3be8c;">    (...)
+</span><span>  </span><span style="color:#bf616a;">dev.example.org.</span><span>: </span><span style="color:#b48ead;">|-
+</span><span style="color:#a3be8c;">    $ORIGIN dev.example.org.
+</span><span style="color:#a3be8c;">
+</span><span style="color:#a3be8c;">    (...)
+</span></code></pre>
+<p>Assuming the <code>example-org</code> refers to a zone with the fully qualified domain name <code>example.org.</code>, and <code>dev-example-org</code>
+likewise represents a Zone with an FQDN of <code>dev.example.org.</code></p>
+<h2 id="specification">Specification</h2>
+<h3 id="spec-zonerefs"><code>.spec.zoneRefs</code></h3>
+<p>List of <code>zoneRef</code>s to include in the <code>ConfigMap</code>.</p>
+<p>Each <code>zoneRef</code> must include the name parameter, and optionally a <code>namespace</code> parameter if the target Zone
+is in a separate namespace from this one.</p>
+<h3 id="spec-configmapname-string"><code>.spec.configMapName</code> string</h3>
+<p>Optionally override the name of the resulting <code>ConfigMap</code>. By default, the <a href="../operators/zonefile/">Zonefile Operator</a> will produce configmaps with the same name as the <code>ZoneFile</code> resource itself.</p>
+<h2 id="status">Status</h2>
+<p>Reflects the last observed hashes and serials for each of its constituent zones, primarily for troubleshooting purposes.</p>
+<h3 id="status-hash-string"><code>.status.hash</code> string</h3>
+<p>Map of FQDNs to latest observed hash for the zone.</p>
+<h3 id="status-serial-u32"><code>.status.serial</code> u32</h3>
+<p>Map of FQDNs to latest observed serial for the zone.</p>
+
+        
+        
+<div class="docs-navigation d-flex justify-content-between">
+  
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+          
+        
+      
+        
+        
+          
+        
+      
+        
+        
+          
+            
+              
+              <a href="https:&#x2F;&#x2F;kubi.zone&#x2F;docs&#x2F;v0.1.0&#x2F;getting-started&#x2F;integrating&#x2F;">
+                <div class="card my-1">
+                  <div class="card-body py-2">
+                    &larr; Integrating
+                  </div>
+                </div>
+              </a>
+            
+            
+            
+          
+        
+      
+    
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+      
+      
+        
+      
+    
+      
+      
+        
+          
+          
+          <a class="ms-auto" href="https:&#x2F;&#x2F;kubi.zone&#x2F;docs&#x2F;v0.1.0&#x2F;operators&#x2F;kubizone&#x2F;">
+            <div class="card my-1">
+              <div class="card-body py-2">
+                Kubizone Operator &rarr;
+              </div>
+            </div>
+          </a>
+          
+          
+          
+        
+      
+    
+  
+</div>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+
+  
+    
+<footer class="footer text-muted">
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-8 order-last order-lg-first">
+				<ul class="list-inline">
+					
+						<li class="list-inline-item">Powered by <a href="https://www.getzola.org/">Zola</a> and <a href="https://github.com/aaranxu/adidoks">AdiDoks</a></li>
+					
+				</ul>
+			</div>
+			<div class="col-lg-8 order-first order-lg-last text-lg-end">
+				<ul class="list-inline">
+					
+				</ul>
+			</div>
+		</div>
+	</div>
+</footer>
+
+  
+
+  
+<script type="text/javascript" src="https://kubi.zone/js/main.js" defer></script>
+
+  <script type="text/javascript" src="https://kubi.zone/plugins/elasticlunr.min.js" defer></script>
+  <script type="text/javascript" src="https://kubi.zone/search_index.en.js" defer></script>
+  <script type="text/javascript" src="https://kubi.zone/js/search.js" defer></script>
+
+  
+</body>
+</html>

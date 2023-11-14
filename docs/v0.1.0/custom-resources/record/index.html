@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="preload" as="font" href="https://kubi.zone/fonts/vendor/jost/jost-v4-latin-regular.woff2" type="font/woff2" crossorigin>
+  <link rel="preload" as="font" href="https://kubi.zone/fonts/vendor/jost/jost-v4-latin-700.woff2"  type="font/woff2" crossorigin>
+
+
+<link rel="stylesheet" href="https://kubi.zone/main.css">
+
+
+
+  
+  
+    
+  
+
+  
+  
+    
+    
+  
+  
+  
+    
+  
+  
+  
+  
+    
+  
+  
+  
+
+
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
+
+	
+
+
+	
+
+<title>Record | kubizone</title>
+<meta name="description" content="A Record represents a single DNS entry within a zone.">
+<link rel="canonical" href="https://kubi.zone/docs/v0.1.0/custom-resources/record/">
+
+
+
+
+
+
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "BreadcrumbList",
+    
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        
+          {
+            "@type": "ListItem",
+            "position":  1 ,
+            "name": "Home",
+            "item": "https://kubi.zone/"
+          },
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  2 ,
+            "name": "Docs",
+            "item": "https://kubi.zone/docs/"
+          },
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  3 ,
+            "name": "V0.1.0",
+            "item": "https://kubi.zone/docs/v0.1.0/"
+          },
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  4 ,
+            "name": "Custom Resources",
+            "item": "https://kubi.zone/docs/v0.1.0/custom-resources/"
+          },
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        
+          
+          
+          {
+            "@type": "ListItem",
+            "position":  5 ,
+            "name": "Record",
+            "item": "https://kubi.zone/docs/v0.1.0/custom-resources/record/"
+          },
+        
+      
+    
+  }
+</script>
+
+
+
+
+
+
+  <meta name="theme-color" content="#fff">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://kubi.zone/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://kubi.zone/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://kubi.zone/favicon-16x16.png">
+  
+    <link rel="manifest" href="https://kubi.zone/site.webmanifest" crossorigin>
+  
+
+
+  
+
+</head>
+
+  
+
+<body class="docs single">
+  
+  
+  
+  
+  
+<div class="header-bar fixed-top"></div>
+<header class="navbar fixed-top navbar-expand-md navbar-light">
+	<div class="container">
+		<input class="menu-btn order-0" type="checkbox" id="menu-btn">
+		<label class="menu-icon d-md-none" for="menu-btn"><span class="navicon"></span></label>
+		<a class="navbar-brand order-1 order-md-0 me-auto" href="https://kubi.zone">
+			<img src="https://kubi.zone/icon.svg" width="28px" height="28px" />
+			kubizone
+		</a>
+		<button id="mode" class="btn btn-link order-2 order-md-4" type="button" aria-label="Toggle mode">
+			<span class="toggle-dark"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></span>
+			<span class="toggle-light"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg></span>
+		</button>
+		<ul class="navbar-nav fork-me order-3 order-md-5">
+			
+				
+					<li class="nav-item">
+						<a class="nav-link" href="https://github.com/mathiaspius/kubizone"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg><span class="ms-2 visually-hidden">GitHub</span></a>
+					</li>
+				
+			
+		</ul>
+		<div class="collapse navbar-collapse order-4 order-md-1">
+			<ul class="navbar-nav main-nav me-auto order-5 order-md-2">
+				
+					
+				
+				
+				
+					
+						<li class="nav-item">
+							<a class="nav-link" href="https://kubi.zone/docs/v0.1.0/getting-started/introduction/">Docs</a>
+						</li>
+					
+				
+			</ul>
+			<div class="break order-6 d-md-none"></div>
+			
+				<form class="navbar-form flex-grow-1 order-7 order-md-3">
+					<input id="userinput" class="form-control is-search" type="search" placeholder="Search docs..."
+						aria-label="Search docs..." autocomplete="off">
+					<div id="suggestions" class="shadow bg-white rounded"></div>
+				</form>
+			
+		</div>
+	</div>
+</header>
+
+
+
+  
+<div class="wrap container" role="document">
+  <div class="content">
+    <div class="row flex-xl-nowrap">
+	  
+<div class="col-lg-5 col-xl-4 docs-sidebar">
+	<nav class="docs-links" aria-label="Main navigation">
+			
+			
+			
+			<a href="/docs"><h1>v0.1.0</h1></a>
+			
+			
+			
+					
+					
+					
+							<h3>Getting Started</h3>
+							<ul class="list-unstyled">
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/introduction/">Introduction</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/installation/">Installation</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/usage/">Usage</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/getting-started/integrating/">Integrating</a></li>
+							
+					</ul>
+					
+					
+					
+					
+							<h3>Custom Resources</h3>
+							<ul class="list-unstyled">
+							                           
+									<li><a class="docs-link active" href="https://kubi.zone/docs/v0.1.0/custom-resources/record/">Record</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/custom-resources/zone/">Zone</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/custom-resources/zonefile/">ZoneFile</a></li>
+							
+					</ul>
+					
+					
+					
+					
+							<h3>Operators</h3>
+							<ul class="list-unstyled">
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/operators/kubizone/">Kubizone Operator</a></li>
+							                           
+									<li><a class="docs-link" href="https://kubi.zone/docs/v0.1.0/operators/zonefile/">Zonefile Operator</a></li>
+							
+					</ul>
+					
+					
+			
+	</nav>
+</div>
+
+	  
+  
+  <nav class="docs-toc d-none d-xl-block col-xl-3" aria-label="Secondary navigation">
+  	<div class="page-links">
+  			<h3>On this page</h3>
+  			<nav id="TableOfContents">
+  					<ul>
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#what-is-a-record">What is a Record?</a></li>
+  							
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#examples">Examples</a></li>
+  							
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#specification">Specification</a></li>
+  							
+  									<ul>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#spec-domainname-string">.spec.domainName string</a></li>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#spec-type-string">.spec.type string</a></li>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#spec-rdata-string">.spec.rdata string</a></li>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#spec-ttl-u32">.spec.ttl u32</a></li>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#spec-class-string">.spec.class string</a></li>
+  											
+  									</ul>
+  							
+  							
+  							<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#status">Status</a></li>
+  							
+  									<ul>
+  											
+  											<li><a href="https://kubi.zone/docs/v0.1.0/custom-resources/record/#status-fqdn-string">.status.fqdn string</a></li>
+  											
+  									</ul>
+  							
+  							
+  					</ul>
+  			</nav>
+  	</div>
+  </nav>
+  
+
+      <main class="docs-content col-lg-11 col-xl-9">
+        <h1>Record</h1>
+        <p class="lead">A Record represents a single DNS entry within a zone</p>
+        <p>The latest version of the <code>Record</code>'s Custom Resource Definition can be found <a href="https://github.com/MathiasPius/kubizone/blob/main/crds/kubi.zone/v1alpha1/Record.yaml">here</a></p>
+<h2 id="what-is-a-record">What is a Record?</h2>
+<p>A <a href="https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records">DNS Record</a> is a single named entry within a zone.</p>
+<h2 id="examples">Examples</h2>
+<p><strong>A fully qualified DNS record:</strong></p>
+<pre data-lang="yaml" style="background-color:#2b303b;color:#c0c5ce;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">apiVersion</span><span>: </span><span style="color:#a3be8c;">kubi.zone/v1alpha1
+</span><span style="color:#bf616a;">kind</span><span>: </span><span style="color:#a3be8c;">Record
+</span><span style="color:#bf616a;">metadata</span><span>:
+</span><span>  </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">www-subdomain-example-org
+</span><span style="color:#bf616a;">spec</span><span>:
+</span><span>  </span><span style="color:#bf616a;">domainName</span><span>: </span><span style="color:#a3be8c;">www.subdomain.example.org.
+</span><span>  </span><span style="color:#bf616a;">type</span><span>: </span><span style="color:#a3be8c;">A
+</span><span>  </span><span style="color:#bf616a;">rdata</span><span>: &quot;</span><span style="color:#a3be8c;">192.168.0.2</span><span>&quot;
+</span></code></pre>
+<p>On its own this <code>Record</code> won't be very useful, but assuming a <a href="../zones/">Zone</a> matching the record's
+fully qualified <code>domainName</code>, which allows delegation of this domain name exists, the record will be
+incorporated into it, and from there be consumed by downstream providers.</p>
+<hr />
+<p><strong>A partial record, referencing a parent zone by name:</strong></p>
+<pre data-lang="yaml" style="background-color:#2b303b;color:#c0c5ce;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">apiVersion</span><span>: </span><span style="color:#a3be8c;">kubi.zone/v1alpha1
+</span><span style="color:#bf616a;">kind</span><span>: </span><span style="color:#a3be8c;">Record
+</span><span style="color:#bf616a;">metadata</span><span>:
+</span><span>  </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">www-subdomain-root
+</span><span style="color:#bf616a;">spec</span><span>:
+</span><span>  </span><span style="color:#bf616a;">domainName</span><span>: </span><span style="color:#a3be8c;">www.subdomain
+</span><span>  </span><span style="color:#bf616a;">zoneRef</span><span>:
+</span><span>    </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">root-zone
+</span><span>  </span><span style="color:#bf616a;">type</span><span>: </span><span style="color:#a3be8c;">A
+</span><span>  </span><span style="color:#bf616a;">rdata</span><span>: &quot;</span><span style="color:#a3be8c;">192.168.0.1</span><span>&quot;
+</span></code></pre>
+<p>Using partial domain names and a <code>zoneRef</code> instead of fully qualified ones, allows you to change
+the top-level domain without editing the <code>domainName</code> across all records, or to define records
+without knowledge of the super-zone. This is useful for deployments of application where only
+the relative subdomain is relevant, such as <code>static.&lt;mydomain&gt;</code> or <code>blog.&lt;top-domain&gt;</code>.</p>
+<hr />
+<p>Both of the above examples assumes the presence of a zone <em>like</em> the one defined below. Note that the zone explicitly allows delegation of the <code>www.subdomain</code> domain
+to <em>any</em> record by not imposing limits on the namespace, class or type of the record.</p>
+<pre data-lang="yaml" style="background-color:#2b303b;color:#c0c5ce;" class="language-yaml "><code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">apiVersion</span><span>: </span><span style="color:#a3be8c;">kubi.zone/v1alpha1
+</span><span style="color:#bf616a;">kind</span><span>: </span><span style="color:#a3be8c;">Zone
+</span><span style="color:#bf616a;">metadata</span><span>:
+</span><span>  </span><span style="color:#bf616a;">name</span><span>: </span><span style="color:#a3be8c;">root-zone
+</span><span style="color:#bf616a;">spec</span><span>:
+</span><span>  </span><span style="color:#bf616a;">domainName</span><span>: </span><span style="color:#a3be8c;">example.org.
+</span><span>  </span><span style="color:#bf616a;">delegations</span><span>:
+</span><span>  - </span><span style="color:#bf616a;">records</span><span>:
+</span><span>    - </span><span style="color:#bf616a;">pattern</span><span>: [&quot;</span><span style="color:#a3be8c;">*.subdomain.example.org.</span><span>&quot;]
+</span></code></pre>
+<h2 id="specification">Specification</h2>
+<p>The <code>Record</code>'s <code>.spec</code> is made up of the following fields:</p>
+<h3 id="spec-domainname-string"><code>.spec.domainName</code> string</h3>
+<p>Either a fully-qualified domain name such as <code>www.example.org.</code> (notice the trailing dot), <em>or</em>
+a partial domain name (the name is only a partial name, such as the <code>www</code> in <code>www.example.org.</code>) in
+which case the <code>.spec.zoneRef</code> field must be populated.</p>
+<p>If using a fully qualified domain name, the <a href="../../operators/kubizone/">Kubizone operator</a> will
+automatically attempt to deduce which parent <a href="../zones/">Zone</a> the record belongs to, favoring
+the longest matching parent domain name.</p>
+<p>Regardless of the domain name type, the operator will respect the parent zone delegations.</p>
+<h3 id="spec-type-string"><code>.spec.type</code> string</h3>
+<p>Type of record. See a list <a href="https://en.wikipedia.org/wiki/List_of_DNS_record_types">here</a> for examples.</p>
+<p>No validation is performed on this field, limitations are only imposed by downstream providers.</p>
+<h3 id="spec-rdata-string"><code>.spec.rdata</code> string</h3>
+<p>Contents of the record. In the case of <code>A</code> records, this will be the IP address.</p>
+<p>In the case of an <code>NS</code> record, this will be the hostname of the nameserver.</p>
+<p>For <code>MX</code> it will be the preference and exchange expressed as a string, e.g.: <code>10 mail.protonmail.ch.</code></p>
+<h3 id="spec-ttl-u32"><code>.spec.ttl</code> u32</h3>
+<p>Time-to-live for the record. If none is set the parent zone's default will be used, which in turn defaults to <code>360</code> seconds.</p>
+<h3 id="spec-class-string"><code>.spec.class</code> string</h3>
+<p>Can also be set, but defaults to <code>IN</code>.</p>
+<h2 id="status">Status</h2>
+<p>The record status only contains the fully qualified domain name of the record.</p>
+<h3 id="status-fqdn-string"><code>.status.fqdn</code> string</h3>
+<p>If the zone has been defined using a fully qualified <code>domainName</code>, then <code>.status.fqdn</code> will simply reflect the <code>.spec.domainName</code>.</p>
+<p>If not, then the <a href="../../operators/kubizone/">Kubizone Operator</a> will automatically deduce the fully qualified domain name for the record, by following and concatenating domain names of the parent zones as defined by the <code>zoneRef</code>s until a fully qualified domain name is constructed.</p>
+
+        
+        
+<div class="docs-navigation d-flex justify-content-between">
+  
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+          
+        
+      
+        
+        
+          
+        
+      
+        
+        
+          
+            
+              
+              <a href="https:&#x2F;&#x2F;kubi.zone&#x2F;docs&#x2F;v0.1.0&#x2F;getting-started&#x2F;integrating&#x2F;">
+                <div class="card my-1">
+                  <div class="card-body py-2">
+                    &larr; Integrating
+                  </div>
+                </div>
+              </a>
+            
+            
+            
+          
+        
+      
+    
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+      
+      
+        
+      
+    
+      
+      
+        
+          
+          
+          <a class="ms-auto" href="https:&#x2F;&#x2F;kubi.zone&#x2F;docs&#x2F;v0.1.0&#x2F;operators&#x2F;kubizone&#x2F;">
+            <div class="card my-1">
+              <div class="card-body py-2">
+                Kubizone Operator &rarr;
+              </div>
+            </div>
+          </a>
+          
+          
+          
+        
+      
+    
+  
+</div>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+
+  
+    
+<footer class="footer text-muted">
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-8 order-last order-lg-first">
+				<ul class="list-inline">
+					
+						<li class="list-inline-item">Powered by <a href="https://www.getzola.org/">Zola</a> and <a href="https://github.com/aaranxu/adidoks">AdiDoks</a></li>
+					
+				</ul>
+			</div>
+			<div class="col-lg-8 order-first order-lg-last text-lg-end">
+				<ul class="list-inline">
+					
+				</ul>
+			</div>
+		</div>
+	</div>
+</footer>
+
+  
+
+  
+<script type="text/javascript" src="https://kubi.zone/js/main.js" defer></script>
+
+  <script type="text/javascript" src="https://kubi.zone/plugins/elasticlunr.min.js" defer></script>
+  <script type="text/javascript" src="https://kubi.zone/search_index.en.js" defer></script>
+  <script type="text/javascript" src="https://kubi.zone/js/search.js" defer></script>
+
+  
+</body>
+</html>
