@@ -48,7 +48,7 @@ spec:
   zoneRef:
     name: root-zone
   type: A
-  rdata: "192.168.0.1s"
+  rdata: "192.168.0.1"
 ```
 Using partial domain names and a `zoneRef` instead of fully qualified ones, allows you to change
 the top-level domain without editing the `domainName` across all records, or to define records
